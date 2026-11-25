@@ -1,0 +1,9 @@
+node_modules/
+.env
+*.log
+.DS_Store
+*.pdf
+*.docx
+*.txt
+PROJECT_DOCUMENTATION.md
+generate_pdf_doc.js

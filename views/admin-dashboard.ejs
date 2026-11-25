@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Canteen - Admin HQ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0f19;
+            --panel: #111827;
+            --panel-header: #1f2937;
+            --line: #1f2937;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --brand: #f59e0b;
+            --brand-gradient: linear-gradient(135deg, #f59e0b, #d97706);
+            --danger: #ef4444;
+            --success: #10b981;
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text-main); display: flex; min-height: 100vh; }
+
+        /* SIDEBAR MODULE NAVIGATION */
+        .sidebar { width: 280px; background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; flex-shrink: 0; }
+        .sidebar-header { padding: 1.5rem; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 0.75rem; }
+        .sidebar-header h1 { font-size: 1.1rem; font-weight: 800; color: var(--brand); letter-spacing: 0.5px; }
+
+        .nav-menu { padding: 1rem 0.75rem; display: flex; flex-direction: column; gap: 0.25rem; overflow-y: auto; flex: 1; }
+        .nav-section-title { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; letter-spacing: 1px; padding: 0.75rem 0.75rem 0.25rem; }
+
+        .nav-item { display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0.85rem; border-radius: 8px; color: var(--text-muted); text-decoration: none; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text-main); }
+        .nav-item.active { background: var(--brand-gradient); color: #0b0f19; font-weight: 800; }
+        .nav-item.active svg { stroke: #0b0f19; }
+
+        .nav-item .nav-label { display: flex; align-items: center; gap: 0.65rem; }
+        .nav-item svg { width: 18px; height: 18px; stroke: var(--text-muted); stroke-width: 2; }
+
+        .nav-badge { background: #1f2937; color: var(--text-main); font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 999px; font-weight: 700; }
+        .nav-item.active .nav-badge { background: rgba(0,0,0,0.2); color: #0b0f19; }
+
+        /* MAIN CONTENT AREA */
+        .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow-x: hidden; }
+        .topbar { height: 64px; border-bottom: 1px solid var(--line); background: var(--panel); display: flex; justify-content: space-between; align-items: center; padding: 0 1.5rem; }
+        .topbar h2 { font-size: 1.1rem; font-weight: 700; }
+
+        .btn-launch-kds { background: #374151; color: var(--text-main); border: 1px solid #4b5563; padding: 0.45rem 0.85rem; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem; }
+        .btn-logout { background: #ef4444; color: white; border: none; padding: 0.45rem 0.85rem; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 0.85rem; }
+
+        .content-area { padding: 1.5rem; overflow-y: auto; flex: 1; }
+
+        /* TAB PANES */
+        .tab-pane { display: none; flex-direction: column; gap: 1.5rem; }
+        .tab-pane.active { display: flex; }
+
+        /* STATS GRID */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; }
+        .stat-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.25rem; }
+        .stat-card .label { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+        .stat-card .value { font-size: 1.8rem; font-weight: 800; color: var(--brand); margin-top: 0.4rem; }
+
+        .section-header { display: flex; justify-content: space-between; align-items: center; }
+        .section-header h3 { font-size: 1.15rem; font-weight: 700; color: var(--text-main); }
+
+        /* DATA TABLE */
+        .data-table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; font-size: 0.9rem; }
+        .data-table th, .data-table td { padding: 0.85rem 1rem; text-align: left; border-bottom: 1px solid var(--line); }
+        .data-table th { background: #111827; color: var(--text-muted); font-weight: 600; }
+        .data-table tr:hover { background: rgba(255,255,255,0.02); }
+
+        .status-select { background: #0b0f19; color: var(--text-main); border: 1px solid var(--line); padding: 0.35rem 0.6rem; border-radius: 6px; font-size: 0.85rem; outline: none; }
+
+        .badge { display: inline-block; padding: 0.25rem 0.65rem; border-radius: 999px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; }
+        .badge.active, .badge.paid, .badge.delivered, .badge.completed, .badge.success { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge.pending { background: rgba(245, 158, 11, 0.2); color: #fde047; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge.preparing, .badge.accepted { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .badge.inactive, .badge.cancelled { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+        .btn-add { background: var(--brand-gradient); color: #0b0f19; border: none; padding: 0.55rem 1.1rem; border-radius: 8px; font-weight: 800; cursor: pointer; transition: transform 0.2s; }
+        .btn-add:hover { transform: scale(1.03); }
+
+        .btn-del { background: #dc2626; color: white; border: none; padding: 0.35rem 0.75rem; border-radius: 6px; font-weight: 700; cursor: pointer; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none; justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(8px); }
+        .modal-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 2rem; width: 100%; max-width: 450px; display: flex; flex-direction: column; gap: 1.1rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6); }
+        .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+        .form-group label { font-size: 0.85rem; color: var(--text-muted); font-weight: 700; }
+        .form-input { padding: 0.65rem 0.85rem; border: 1px solid var(--line); border-radius: 8px; background: #0b0f19; color: var(--text-main); font-size: 0.95rem; }
+        .input-eye-wrap { position: relative; display: flex; align-items: center; }
+        .input-eye-wrap .form-input { width: 100%; padding-right: 2.75rem; }
+        .eye-toggle-btn { position: absolute; right: 0.65rem; background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; padding: 0.25rem; border-radius: 6px; }
+        .eye-toggle-btn:hover { color: var(--brand); }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR MODULE NAVIGATION -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                MASTER CANTEEN
+            </h1>
+        </div>
+
+        <div class="nav-menu">
+            <div class="nav-section-title">Overview</div>
+            <div class="nav-item active" onclick="switchTab('tab-dashboard', this)">
+                <div class="nav-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                    <span>Dashboard & Stats</span>
+                </div>
+            </div>
+
+            <div class="nav-section-title">Sales & Orders</div>
+            <div class="nav-item" onclick="switchTab('tab-orders', this)">
+                <div class="nav-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                    <span>Orders Management</span>
+                </div>
+                <span class="nav-badge" id="nav-badge-orders"><%= stats.totalOrders %></span>
+            </div>
+            <div class="nav-item" onclick="switchTab('tab-tickets', this)">
+                <div class="nav-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path></svg>
+                    <span>Kitchen Tickets (KOT)</span>
+                </div>
+                <span class="nav-badge" id="nav-badge-kot"><%= stats.activeTickets %></span>
+            </div>
+            <div class="nav-item" onclick="switchTab('tab-carts', this)">
+                <div class="nav-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                    <span>Active Customer Carts</span>
+                </div>
+                <span class="nav-badge" id="nav-badge-carts"><%= stats.activeCarts %></span>
+            </div>
+
+            <div class="nav-section-title">Menu Management</div>
+            <div class="nav-item" onclick="switchTab('tab-items', this)">
+                <div class="nav-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                    <span>Food Menu Dishes</span>
+                </div>
+                <span class="nav-badge"><%= foodItems.length %></span>
+            </div>
+            <div class="nav-item" onclick="switchTab('tab-categories', this)">
+                <div class="nav-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    <span>Food Categories</span>
+                </div>
+                <span class="nav-badge"><%= foodCategories.length %></span>
+            </div>
+
+            <div class="nav-section-title">Security & System Settings</div>
+            <div class="nav-item" onclick="switchTab('tab-kitchen-ips', this)">
+                <div class="nav-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                    <span>Kitchen IP Whitelist</span>
+                </div>
+                <span class="nav-badge"><%= allowedKitchenIps ? allowedKitchenIps.length : 0 %></span>
+            </div>
+            <div class="nav-item" onclick="switchTab('tab-numbering-settings', this)">
+                <div class="nav-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    <span>Order Numbering Settings</span>
+                </div>
+                <span class="nav-badge" style="background:#f59e0b; color:black;">CONFIG</span>
+            </div>
+
+            <div class="nav-section-title">Dining & Premises</div>
+            <div class="nav-item" onclick="switchTab('tab-tables', this)">
+                <div class="nav-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                    <span>Dining Tables & QR</span>
+                </div>
+                <span class="nav-badge"><%= tables.length %></span>
+            </div>
+
+            <div class="nav-section-title">Administration</div>
+            <div class="nav-item" onclick="switchTab('tab-users', this)">
+                <div class="nav-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    <span>Users & Staff</span>
+                </div>
+                <span class="nav-badge"><%= users.length %></span>
+            </div>
+            <div class="nav-item" onclick="switchTab('tab-coupons', this)">
+                <div class="nav-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                    <span>Coupons & Discounts</span>
+                </div>
+                <span class="nav-badge"><%= coupons.length %></span>
+            </div>
+            <div class="nav-item" onclick="switchTab('tab-stocks', this)">
+                <div class="nav-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                    <span>Stock & Inventory</span>
+                </div>
+                <span class="nav-badge"><%= stocks.length %></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="main-wrapper">
+        <div class="topbar">
+            <h2 id="currentTabTitle">Dashboard & Stats</h2>
+            <div style="display:flex; gap:1rem; align-items:center;">
+                <a href="/kitchen/screen" target="_blank" class="btn-launch-kds">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Launch KDS Screen
+                </a>
+                <a href="/admin/logout" class="btn-logout">Logout Admin</a>
+            </div>
+        </div>
+
+        <div class="content-area">
+
+            <!-- TAB 1: DASHBOARD OVERVIEW -->
+            <div id="tab-dashboard" class="tab-pane active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="label">Total Gross Revenue</div>
+                        <div class="value">₹<%= parseFloat(stats.totalRevenue || 4850).toFixed(2) %></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Total Orders Handled</div>
+                        <div class="value"><%= stats.totalOrders || 34 %></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Active KDS Tickets</div>
+                        <div class="value"><%= stats.activeTickets || 0 %></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Registered Tables</div>
+                        <div class="value"><%= stats.totalTables || 10 %></div>
+                    </div>
+                </div>
+
+                <div class="section-header" style="margin-top:1rem;">
+                    <h3>Recent Orders Preview</h3>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Order No</th>
+                            <th>Table</th>
+                            <th>Customer</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (!orders.length) { %>
+                            <tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No recent orders. Place an order via Customer QR Page!</td></tr>
+                        <% } else { %>
+                            <% orders.slice(0,10).forEach(order => { %>
+                                <tr>
+                                    <td><strong><%= order.order_number || order.ticket_number %></strong></td>
+                                    <td><%= order.table_number || 'Table 1' %></td>
+                                    <td><%= order.customer_name || 'Guest' %></td>
+                                    <td>₹<%= parseFloat(order.total_amount || 150).toFixed(2) %></td>
+                                    <td><span class="badge <%= order.status %>"><%= order.status %></span></td>
+                                    <td><%= new Date(order.created_at || Date.now()).toLocaleString() %></td>
+                                </tr>
+                            <% }) %>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TAB 2: ORDERS MANAGEMENT -->
+            <div id="tab-orders" class="tab-pane">
+                <div class="section-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3>Orders Management (<%= orders.length %>)</h3>
+                    <button style="background:#dc2626; color:#ffffff; font-size:0.82rem; padding:0.45rem 0.85rem; border-radius:6px; border:none; cursor:pointer; font-weight:700;" onclick="purgeAllOrdersAdmin()">
+                        🔥 Purge All & Reset Counter to 1
+                    </button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Order No</th>
+                            <th>Table</th>
+                            <th>Customer Info</th>
+                            <th>Amount</th>
+                            <th>Current Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminOrdersTbody">
+                        <% if (!orders.length) { %>
+                            <tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No active orders available right now.</td></tr>
+                        <% } else { %>
+                            <% orders.forEach(order => { %>
+                                <tr>
+                                    <td><strong><%= order.order_number || order.ticket_number %></strong></td>
+                                    <td><%= order.table_number || 'Table 1' %></td>
+                                    <td><%= order.customer_name || 'Guest' %> (<%= order.customer_phone || '9999999999' %>)</td>
+                                    <td>₹<%= parseFloat(order.total_amount || 150).toFixed(2) %></td>
+                                    <td>
+                                        <select id="status-select-<%= order.uuid || order.order_number %>" class="form-input" style="padding:0.25rem 0.5rem; font-size:0.8rem; border-radius:4px; font-weight:700; background:#0f172a; color:#fff;" onchange="updateOrderStatusFromAdmin('<%= order.uuid || order.order_number %>', this.value)">
+                                            <option value="pending" <%= order.status === 'pending' ? 'selected' : '' %>>🟡 PENDING</option>
+                                            <option value="preparing" <%= order.status === 'preparing' ? 'selected' : '' %>>🔵 PREPARING</option>
+                                            <option value="ready" <%= order.status === 'ready' ? 'selected' : '' %>>🟢 READY</option>
+                                            <option value="delivered" <%= order.status === 'delivered' ? 'selected' : '' %>>🍇 DELIVERED</option>
+                                            <option value="completed" <%= order.status === 'completed' ? 'selected' : '' %>>✅ COMPLETED</option>
+                                            <option value="cancelled" <%= order.status === 'cancelled' ? 'selected' : '' %>>🔴 CANCELLED</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <button class="btn-del" onclick="deleteOrderItem('orders', '<%= order.id || order.uuid %>')">Delete</button>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TAB 3: KITCHEN TICKETS (KOT) -->
+            <div id="tab-tickets" class="tab-pane">
+                <div class="section-header">
+                    <h3>Kitchen Order Tickets (KOT) (<%= tickets.length %>)</h3>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Ticket No</th>
+                            <th>Table</th>
+                            <th>Order ID</th>
+                            <th>Status</th>
+                            <th>Created Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (!tickets.length) { %>
+                            <tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No kitchen tickets available.</td></tr>
+                        <% } else { %>
+                            <% tickets.forEach(t => { %>
+                                <tr>
+                                    <td><strong><%= t.ticket_number %></strong></td>
+                                    <td><%= t.table_number %></td>
+                                    <td>#<%= t.order_id %></td>
+                                    <td><span class="badge <%= t.status %>"><%= t.status %></span></td>
+                                    <td><%= new Date(t.created_at || Date.now()).toLocaleTimeString() %></td>
+                                </tr>
+                            <% }) %>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TAB 4: ACTIVE CARTS -->
+            <div id="tab-carts" class="tab-pane">
+                <div class="section-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3>Active Customer Carts (<%= carts.length %>)</h3>
+                    <button style="background:#dc2626; color:#ffffff; font-size:0.82rem; padding:0.45rem 0.85rem; border-radius:6px; border:none; cursor:pointer; font-weight:700;" onclick="clearAllActiveCartsAdmin()">
+                        🗑️ Clear All Active Draft Carts
+                    </button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Cart Session Token</th>
+                            <th>Table</th>
+                            <th>Items Count</th>
+                            <th>Total Amount</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminCartsTbody">
+                        <% (carts || []).forEach(c => { %>
+                            <tr>
+                                <td><code><%= c.uuid %></code></td>
+                                <td><strong style="color:var(--brand);"><%= c.table_name || 'Table 1' %></strong></td>
+                                <td><%= c.items_count %> Dishes</td>
+                                <td>₹<%= parseFloat(c.total_amount || 0).toFixed(2) %></td>
+                                <td><span class="badge active">ACTIVE SESSION</span></td>
+                                <td>
+                                    <button class="btn-del" onclick="deleteActiveCartAdmin('<%= c.uuid %>')">🗑️ Delete</button>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TAB 5: FOOD MENU DISHES -->
+            <div id="tab-items" class="tab-pane">
+                <div class="section-header">
+                    <h3>Food Menu Dishes (<%= foodItems.length %>)</h3>
+                    <button class="btn-add" onclick="openAddDishModal()">+ Add New Dish</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Code</th>
+                            <th>Dish Name</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% foodItems.forEach(item => { %>
+                            <tr>
+                                <td>#<%= item.id %></td>
+                                <td><code><%= item.code %></code></td>
+                                <td><strong><%= item.name %></strong></td>
+                                <td><%= item.category_name || 'Main Dish' %></td>
+                                <td>₹<%= parseFloat(item.base_price).toFixed(2) %></td>
+                                <td>
+                                    <span class="badge <%= item.is_available ? 'active' : 'inactive' %>">
+                                        <%= item.is_available ? 'Available' : 'Out of Stock' %>
+                                    </span>
+                                </td>
+                                <td>
+                                    <button onclick="toggleItem(<%= item.id %>)" style="background:none; border:1px solid var(--line); color:var(--brand); padding:0.3rem 0.6rem; border-radius:6px; cursor:pointer; font-weight:700; margin-right:0.4rem;">
+                                        Toggle
+                                    </button>
+                                    <button class="btn-del" onclick="deleteOrderItem('items', <%= item.id %>)">Delete</button>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TAB 6: FOOD CATEGORIES -->
+            <div id="tab-categories" class="tab-pane">
+                <div class="section-header">
+                    <h3>Food Categories (<%= foodCategories.length %>)</h3>
+                    <button class="btn-add" onclick="openPromptModal('category')">+ Add New Category</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Category Name</th>
+                            <th>Code</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% foodCategories.forEach(cat => { %>
+                            <tr>
+                                <td>#<%= cat.id %></td>
+                                <td><strong><%= cat.name %></strong></td>
+                                <td><code><%= cat.code %></code></td>
+                                <td><span class="badge active"><%= cat.status %></span></td>
+                                <td>
+                                    <button class="btn-del" onclick="deleteOrderItem('categories', <%= cat.id %>)">Delete</button>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TAB: KITCHEN IP SECURITY WHITELIST -->
+            <div id="tab-kitchen-ips" class="tab-pane">
+                <div class="section-header" style="margin-bottom:1.5rem;">
+                    <div>
+                        <h3 style="font-size:1.3rem; color:var(--brand);">📡 KITCHEN DEVICE IP SECURITY WHITELIST</h3>
+                        <p style="color:var(--text-muted); font-size:0.85rem; margin-top:0.2rem;">
+                            No username or passwords required! Only devices with Whitelisted IP Addresses can access the Kitchen Display Screen.
+                        </p>
+                    </div>
+                    <div>
+                        <button type="button" class="btn-add" onclick="addCurrentIp('<%= clientIp %>')">+ Whitelist My Current IP (<%= clientIp %>)</button>
+                    </div>
+                </div>
+
+                <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:1.5rem; margin-bottom:1.5rem; display:flex; gap:1rem; align-items:center;">
+                    <input type="text" id="newKitchenIpInput" class="form-input" style="flex:1;" placeholder="Enter IP Address (e.g. 192.168.1.100 or * to allow all devices during demo)">
+                    <button type="button" class="btn-add" onclick="addNewKitchenIp()">+ Add Allowed IP</button>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Allowed Device IP Address</th>
+                            <th>Security Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% (allowedKitchenIps || []).forEach(ip => { %>
+                            <tr>
+                                <td><strong style="color:var(--brand); font-family:monospace; font-size:1.05rem;"><%= ip === '*' ? '* (ALL DEVICES ALLOWED FOR DEMO)' : ip %></strong></td>
+                                <td><span class="badge active">WHITELISTED & ALLOWED</span></td>
+                                <td>
+                                    <button type="button" onclick="removeKitchenIp('<%= encodeURIComponent(ip) %>')" style="background:#dc2626; color:white; border:none; padding:0.35rem 0.8rem; border-radius:6px; font-weight:800; cursor:pointer;">Remove IP</button>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TAB: INVOICE & ORDER NUMBERING SETTINGS -->
+            <div id="tab-numbering-settings" class="tab-pane">
+                <div class="section-header" style="margin-bottom:1.5rem;">
+                    <div>
+                        <div style="display:flex; align-items:center; gap:0.6rem;">
+                            <span style="font-size:1.5rem;">⚙️</span>
+                            <h3 style="font-size:1.4rem; font-weight:800; color:#ffffff; margin:0;">Admin Settings</h3>
+                        </div>
+                        <p style="color:var(--text-muted); font-size:0.85rem; margin-top:0.3rem;">
+                            High-fidelity modern dashboard controls for Canteen & Ordering Logic
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 2x2 MODERN GLASSMORPHISM SETTINGS GRID -->
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap:1.25rem; margin-bottom:1.75rem;">
+                    
+                    <!-- 1) GOOGLE AUTHENTICATION CARD -->
+                    <div style="background:#0c121e; border:1px solid #1e293b; border-radius:16px; padding:1.35rem; display:flex; flex-direction:column; justify-content:space-between; gap:1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <div style="display:flex; align-items:center; gap:0.75rem;">
+                                <div style="width:42px; height:42px; border-radius:12px; background:rgba(66, 133, 244, 0.12); border:1px solid rgba(66, 133, 244, 0.3); display:flex; align-items:center; justify-content:center;">
+                                    <svg width="22" height="22" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                                </div>
+                                <div>
+                                    <h4 style="margin:0; font-size:1.05rem; font-weight:800; color:#ffffff;">Google Authentication</h4>
+                                    <span style="font-size:0.75rem; color:var(--text-muted);">Mandatory vs Guest Mode</span>
+                                </div>
+                            </div>
+                            
+                            <!-- iOS Toggle Switch -->
+                            <button id="googleAuthToggleBtn" onclick="toggleGoogleAuth()" style="cursor:pointer; display:flex; align-items:center; gap:0.4rem; padding:0.35rem 0.85rem; border-radius:999px; border:none; font-weight:800; font-size:0.8rem; color:#ffffff; background:<%= (orderNumberSettings.require_google_auth !== false) ? '#10b981' : '#334155' %>; box-shadow:<%= (orderNumberSettings.require_google_auth !== false) ? '0 0 14px rgba(16, 185, 129, 0.5)' : 'none' %>; transition:all 0.25s;">
+                                <span><%= (orderNumberSettings.require_google_auth !== false) ? 'ON' : 'OFF' %></span>
+                                <div style="width:18px; height:18px; background:#fff; border-radius:50%;"></div>
+                            </button>
+                        </div>
+
+                        <!-- Segmented Pill Control for Email Restriction Sub-Option -->
+                        <div style="background:rgba(15, 23, 42, 0.8); border:1px solid #1e293b; border-radius:12px; padding:0.6rem;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem;">
+                                <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Email Domain Restriction:</span>
+                            </div>
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.4rem;">
+                                <button type="button" onclick="setDomainRestriction('campus.edu')" style="cursor:pointer; padding:0.5rem 0.4rem; border-radius:8px; border:1px solid <%= orderNumberSettings.restrict_email_domain === 'campus.edu' ? '#f59e0b' : 'transparent' %>; font-size:0.76rem; font-weight:700; color:<%= orderNumberSettings.restrict_email_domain === 'campus.edu' ? '#fbbf24' : '#94a3b8' %>; background:<%= orderNumberSettings.restrict_email_domain === 'campus.edu' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(30, 41, 59, 0.4)' %>; transition:all 0.2s;">
+                                    🔒 CAMPUS ONLY (@campus.edu)
+                                </button>
+                                <button type="button" onclick="setDomainRestriction('')" style="cursor:pointer; padding:0.5rem 0.4rem; border-radius:8px; border:1px solid <%= orderNumberSettings.restrict_email_domain !== 'campus.edu' ? '#3b82f6' : 'transparent' %>; font-size:0.76rem; font-weight:700; color:<%= orderNumberSettings.restrict_email_domain !== 'campus.edu' ? '#60a5fa' : '#94a3b8' %>; background:<%= orderNumberSettings.restrict_email_domain !== 'campus.edu' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(30, 41, 59, 0.4)' %>; transition:all 0.2s;">
+                                    🌐 ALL EMAIL IDs ALLOWED
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2) CANTEEN LIVE TV DISPLAY PIN CHECK CARD -->
+                    <div style="background:#0c121e; border:1px solid #1e293b; border-radius:16px; padding:1.35rem; display:flex; flex-direction:column; justify-content:space-between; gap:1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <div style="display:flex; align-items:center; gap:0.75rem;">
+                                <div style="width:42px; height:42px; border-radius:12px; background:rgba(16, 185, 129, 0.12); border:1px solid rgba(16, 185, 129, 0.3); display:flex; align-items:center; justify-content:center; color:#10b981; font-size:1.3rem;">
+                                    📺
+                                </div>
+                                <div>
+                                    <h4 style="margin:0; font-size:1.05rem; font-weight:800; color:#ffffff;">Canteen Live TV PIN Check</h4>
+                                    <span style="font-size:0.75rem; color:var(--text-muted);">Require 6-digit PIN on Live TV Display</span>
+                                </div>
+                            </div>
+                            
+                            <!-- iOS Toggle Switch -->
+                            <button id="canteenPinToggleBtn" onclick="toggleCanteenPin()" style="cursor:pointer; display:flex; align-items:center; gap:0.4rem; padding:0.35rem 0.85rem; border-radius:999px; border:none; font-weight:800; font-size:0.8rem; color:#ffffff; background:<%= (orderNumberSettings.require_canteen_pin !== false) ? '#10b981' : '#334155' %>; box-shadow:<%= (orderNumberSettings.require_canteen_pin !== false) ? '0 0 14px rgba(16, 185, 129, 0.5)' : 'none' %>; transition:all 0.25s;">
+                                <span><%= (orderNumberSettings.require_canteen_pin !== false) ? 'ON' : 'OFF' %></span>
+                                <div style="width:18px; height:18px; background:#fff; border-radius:50%;"></div>
+                            </button>
+                        </div>
+
+                        <p style="margin:0; color:var(--text-muted); font-size:0.82rem; line-height:1.4;">
+                            Turn <strong>OFF</strong> for external shops & general counters to allow instant 1-click customer checkout without PIN.
+                        </p>
+                    </div>
+
+                    <!-- 3) CLASSROOM PRE-ORDERING CARD -->
+                    <div style="background:#0c121e; border:1px solid #1e293b; border-radius:16px; padding:1.35rem; display:flex; flex-direction:column; justify-content:space-between; gap:1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <div style="display:flex; align-items:center; gap:0.75rem;">
+                                <div style="width:42px; height:42px; border-radius:12px; background:rgba(245, 158, 11, 0.12); border:1px solid rgba(245, 158, 11, 0.3); display:flex; align-items:center; justify-content:center; color:#f59e0b; font-size:1.3rem;">
+                                    🏫
+                                </div>
+                                <div>
+                                    <h4 style="margin:0; font-size:1.05rem; font-weight:800; color:#ffffff;">Classroom Pre-Ordering</h4>
+                                    <span style="font-size:0.75rem; color:var(--text-muted);">Remote order without Table QR scan</span>
+                                </div>
+                            </div>
+                            
+                            <!-- iOS Toggle Switch -->
+                            <button id="preorderToggleBtn" onclick="toggleRemotePreorder()" style="cursor:pointer; display:flex; align-items:center; gap:0.4rem; padding:0.35rem 0.85rem; border-radius:999px; border:none; font-weight:800; font-size:0.8rem; color:#ffffff; background:<%= orderNumberSettings.allow_remote_preorder ? '#10b981' : '#ef4444' %>; box-shadow:<%= orderNumberSettings.allow_remote_preorder ? '0 0 14px rgba(16, 185, 129, 0.5)' : '0 0 14px rgba(239, 68, 68, 0.5)' %>; transition:all 0.25s;">
+                                <span><%= orderNumberSettings.allow_remote_preorder ? 'ON' : 'OFF' %></span>
+                                <div style="width:18px; height:18px; background:#fff; border-radius:50%;"></div>
+                            </button>
+                        </div>
+
+                        <p style="margin:0; color:var(--text-muted); font-size:0.82rem; line-height:1.4;">
+                            When <strong>OFF</strong>, students must physically come to the canteen and scan a Table QR code.
+                        </p>
+                    </div>
+
+                    <!-- 4) ORDER NUMBERING & LIVE PREVIEW CARD -->
+                    <div style="background:#0c121e; border:1px solid #1e293b; border-radius:16px; padding:1.35rem; display:flex; flex-direction:column; justify-content:space-between; gap:1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <div style="display:flex; align-items:center; gap:0.75rem;">
+                                <div style="width:42px; height:42px; border-radius:12px; background:rgba(217, 119, 6, 0.15); border:1px solid rgba(217, 119, 6, 0.4); display:flex; align-items:center; justify-content:center; color:#fbbf24; font-size:1.3rem; font-weight:900;">
+                                    #
+                                </div>
+                                <div>
+                                    <h4 style="margin:0; font-size:1.05rem; font-weight:800; color:#ffffff;">Sequential Order Numbering</h4>
+                                    <span style="font-size:0.75rem; color:var(--text-muted);">Dynamic Invoice & KOT generator</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="background:#090d16; border:1px dashed var(--brand); border-radius:10px; padding:0.6rem 0.9rem; display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size:0.78rem; color:var(--text-muted); font-weight:700;">CURRENT NEXT PREVIEW:</span>
+                            <span id="liveNextPreview" style="color:var(--brand); font-size:1.25rem; font-weight:900; font-family:monospace;"><%= nextOrderPreview %></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONFIGURATION FORM SECTION -->
+                <div style="background:var(--panel); border:1px solid #1e293b; border-radius:16px; padding:1.5rem;">
+                    <h4 style="font-size:1.1rem; font-weight:800; color:#ffffff; margin:0 0 1rem 0;">Custom Prefix & Auto-Hide Configuration</h4>
+                    <form id="numberingSettingsForm" style="display:grid; grid-template-columns: 1fr 1fr; gap:1.25rem;">
+                        <div class="form-group">
+                            <label>Order Number Prefix</label>
+                            <input type="text" id="settingPrefix" class="form-input" value="<%= orderNumberSettings.prefix %>" placeholder="e.g. ORD- or INV-" oninput="updateLivePreview()">
+                            <small style="color:var(--text-muted); font-size:0.75rem;">Appears before the number (e.g., ORD-)</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Order Number Suffix</label>
+                            <input type="text" id="settingSuffix" class="form-input" value="<%= orderNumberSettings.suffix %>" placeholder="e.g. -HQ or -MC" oninput="updateLivePreview()">
+                            <small style="color:var(--text-muted); font-size:0.75rem;">Appears after the number (e.g., -HQ)</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Digit Padding Count</label>
+                            <input type="number" id="settingDigits" class="form-input" value="<%= orderNumberSettings.digit_count %>" min="1" max="10" placeholder="e.g. 6 for 000001" oninput="updateLivePreview()">
+                            <small style="color:var(--text-muted); font-size:0.75rem;">6 digits = 000001, 4 digits = 0001</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Current / Next Counter Number</label>
+                            <input type="number" id="settingCounter" class="form-input" value="<%= orderNumberSettings.current_counter %>" min="1" placeholder="e.g. 1 or 101" oninput="updateLivePreview()">
+                            <small style="color:var(--text-muted); font-size:0.75rem;">Continuous incremental counter</small>
+                        </div>
+
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label style="color:var(--brand); font-weight:800;">⏱️ Kitchen Screen Ticket Auto-Hide Duration (Minutes)</label>
+                            <select id="settingAutoHide" class="form-input">
+                                <option value="10" <%= (orderNumberSettings.auto_hide_minutes == 10) ? 'selected' : '' %>>10 Minutes</option>
+                                <option value="30" <%= (orderNumberSettings.auto_hide_minutes == 30) ? 'selected' : '' %>>30 Minutes</option>
+                                <option value="60" <%= (!orderNumberSettings.auto_hide_minutes || orderNumberSettings.auto_hide_minutes == 60) ? 'selected' : '' %>>60 Minutes (1 Hour)</option>
+                                <option value="120" <%= (orderNumberSettings.auto_hide_minutes == 120) ? 'selected' : '' %>>120 Minutes (2 Hours)</option>
+                                <option value="0" <%= (orderNumberSettings.auto_hide_minutes == 0) ? 'selected' : '' %>>0 (Never Hide - Keep All)</option>
+                            </select>
+                            <small style="color:var(--text-muted); font-size:0.75rem;">Fulfilled tickets auto-hide from Kitchen Display Screen after this duration.</small>
+                        </div>
+
+                        <div style="grid-column: span 2; display:flex; justify-content:flex-end; margin-top:0.5rem;">
+                            <button type="submit" class="btn-add" style="padding:0.75rem 2rem; font-size:1rem;">💾 Save Configuration Settings</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- ADMIN ACCOUNT CREDENTIALS SECTION -->
+                <div style="background:var(--panel); border:1px solid #1e293b; border-radius:16px; padding:1.5rem; margin-top:1.5rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+                        <div>
+                            <h4 style="font-size:1.1rem; font-weight:800; color:#ffffff; margin:0;">🔐 Admin Login Credentials</h4>
+                            <p style="color:var(--text-muted); font-size:0.82rem; margin-top:0.2rem;">Change your Admin ID / Username and Password anytime. Changes persist across restarts.</p>
+                        </div>
+                        <span style="background:rgba(245, 158, 11, 0.15); color:#fbbf24; border:1px solid rgba(245, 158, 11, 0.3); padding:0.35rem 0.75rem; border-radius:8px; font-size:0.8rem; font-weight:700;">
+                            Current ID: <span id="currentAdminIdLabel"><%= typeof adminUsername !== 'undefined' ? adminUsername : 'admin' %></span>
+                        </span>
+                    </div>
+                    <div id="credStatusMsg" style="display:none; padding:0.65rem 0.9rem; border-radius:8px; font-size:0.85rem; font-weight:700; margin-bottom:1rem;"></div>
+                    <form id="adminCredentialsForm" autocomplete="off" style="display:grid; grid-template-columns: 1fr 1fr; gap:1.25rem;">
+                        <div class="form-group">
+                            <label for="credCurrentPass">Current Password</label>
+                            <div class="input-eye-wrap">
+                                <input type="password" id="credCurrentPass" class="form-input" placeholder="Enter current password" autocomplete="new-password" required>
+                                <button type="button" class="eye-toggle-btn" onclick="toggleSettingEye('credCurrentPass', this)" aria-label="Toggle current password">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="credNewUsername">New Admin ID / Username</label>
+                            <div class="input-eye-wrap">
+                                <input type="text" id="credNewUsername" class="form-input" value="<%= typeof adminUsername !== 'undefined' ? adminUsername : 'admin' %>" placeholder="Enter new Admin ID" autocomplete="off" required>
+                                <button type="button" class="eye-toggle-btn" onclick="toggleSettingEye('credNewUsername', this)" aria-label="Toggle Admin ID">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="credNewPass">New Password <small style="font-weight:500;">(leave blank to keep existing)</small></label>
+                            <div class="input-eye-wrap">
+                                <input type="password" id="credNewPass" class="form-input" placeholder="Min 4 characters" autocomplete="new-password">
+                                <button type="button" class="eye-toggle-btn" onclick="toggleSettingEye('credNewPass', this)" aria-label="Toggle new password">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="credConfirmPass">Confirm New Password</label>
+                            <div class="input-eye-wrap">
+                                <input type="password" id="credConfirmPass" class="form-input" placeholder="Re-enter new password" autocomplete="new-password">
+                                <button type="button" class="eye-toggle-btn" onclick="toggleSettingEye('credConfirmPass', this)" aria-label="Toggle confirm password">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="grid-column: span 2; display:flex; justify-content:flex-end;">
+                            <button type="submit" class="btn-add" style="padding:0.75rem 2rem; font-size:0.95rem;">🔐 Update Admin ID & Password</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- TAB 8: DINING TABLES & VISUAL QR CODE POSTERS -->
+            <div id="tab-tables" class="tab-pane">
+                <div class="section-header" style="margin-bottom:1.5rem;">
+                    <div>
+                        <h3 style="font-size:1.3rem; color:var(--brand);">🔲 DINING TABLES & VISUAL QR CODE POSTERS (<%= tables.length %>)</h3>
+                        <p style="color:var(--text-muted); font-size:0.85rem; margin-top:0.2rem;">
+                            Print QR Code posters for Canteen Tables & Entrance Express Standee. Students scan using mobile camera to open menu.
+                        </p>
+                    </div>
+                    <div style="display:flex; gap:0.5rem;">
+                        <a href="/canteen/display" target="_blank" class="btn-add" style="background:#10b981; color:#fff; text-decoration:none; font-weight:700;">
+                            📺 Open Live Canteen TV Display Screen ↗
+                        </a>
+                        <button class="btn-add" onclick="openPromptModal('table')">+ Add New Dining Table</button>
+                    </div>
+                </div>
+
+                <!-- FEATURED CARD: CANTEEN ENTRANCE EXPRESS TAKEAWAY STANDEE QR -->
+                <div style="background:linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); border:1px solid var(--brand); border-radius:16px; padding:1.5rem; margin-bottom:2rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1.5rem; box-shadow:0 10px 25px rgba(0,0,0,0.3);">
+                    <div style="flex:1; min-width:280px;">
+                        <span class="badge active" style="background:#f59e0b; color:#000; font-weight:800; font-size:0.75rem; margin-bottom:0.5rem; display:inline-block;">CANTEEN ENTRANCE & STANDING QR</span>
+                        <h4 style="margin:0.25rem 0; color:#fff; font-size:1.25rem; font-weight:800;">📍 Canteen Entrance Express Takeaway QR Poster</h4>
+                        <p style="margin:0.35rem 0 0 0; color:var(--text-muted); font-size:0.85rem; line-height:1.4;">
+                            Display this QR code poster at the canteen entrance wall or ordering counter. Students standing or waiting without a table can scan this QR code to order Express Takeaway food!
+                        </p>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:1.25rem; background:#090d16; padding:1rem; border-radius:12px; border:1px dashed var(--brand);">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=<%= encodeURIComponent((typeof baseUrl !== 'undefined' ? baseUrl : 'http://localhost:3000') + '/order/takeaway') %>" alt="Entrance Express QR" style="width:100px; height:100px; border-radius:8px; background:#fff; padding:4px;">
+                        <div>
+                            <div style="color:#fff; font-weight:800; font-size:0.9rem; margin-bottom:0.25rem;">Express Takeaway QR</div>
+                            <small style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:0.5rem;">Link: /order/takeaway</small>
+                            <button type="button" class="btn-add" onclick="printQrModal('Canteen Entrance Express Standee', '/order/takeaway')" style="padding:0.4rem 0.8rem; font-size:0.8rem;">
+                                🖨️ Print Entrance Poster
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Table Name</th>
+                            <th>Code</th>
+                            <th>Capacity</th>
+                            <th>Visual QR Code</th>
+                            <th>Ordering Link</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% tables.forEach(t => { %>
+                            <% const tableUrl = (typeof baseUrl !== 'undefined' ? baseUrl : 'http://localhost:3000') + '/order/' + t.uuid; %>
+                            <tr>
+                                <td><strong><%= t.name %></strong></td>
+                                <td><code><%= t.code %></code></td>
+                                <td><%= t.seat_capacity %> Seats</td>
+                                <td>
+                                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=<%= encodeURIComponent(tableUrl) %>" alt="<%= t.name %> QR" style="width:50px; height:50px; border-radius:6px; background:#fff; padding:2px;">
+                                        <button type="button" onclick="printQrModal('<%= t.name %>', '/order/<%= t.uuid %>')" style="background:none; border:1px solid var(--brand); color:var(--brand); padding:0.3rem 0.6rem; border-radius:6px; cursor:pointer; font-weight:700; font-size:0.8rem;">
+                                            🖨️ Print QR Card
+                                        </button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="/order/<%= t.uuid %>" target="_blank" style="color:var(--brand); text-decoration:none; font-weight:700; font-size:0.85rem;">
+                                        Open Link (/order/<%= t.uuid %>) ↗
+                                    </a>
+                                </td>
+                                <td>
+                                    <button class="btn-del" onclick="deleteOrderItem('tables', <%= t.id %>)">Delete</button>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TAB 11: USERS & STAFF -->
+            <div id="tab-users" class="tab-pane">
+                <div class="section-header">
+                    <h3>Users & Staff Members (<%= users.length %>)</h3>
+                    <button class="btn-add" onclick="openPromptModal('user')">+ Add Staff Member</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Staff Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% users.forEach(u => { %>
+                            <tr>
+                                <td><strong><%= u.name %></strong></td>
+                                <td><%= u.email %></td>
+                                <td><span class="badge active"><%= u.user_type %></span></td>
+                                <td>
+                                    <button class="btn-del" onclick="deleteOrderItem('users', <%= u.id %>)">Delete</button>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TAB 12: COUPONS & DISCOUNTS -->
+            <div id="tab-coupons" class="tab-pane">
+                <div class="section-header">
+                    <h3>Coupons & Promotional Offers (<%= coupons.length %>)</h3>
+                    <button class="btn-add" onclick="openPromptModal('coupon')">+ Add Coupon Code</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Coupon Code</th>
+                            <th>Discount</th>
+                            <th>Max Limit</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% coupons.forEach(cp => { %>
+                            <tr>
+                                <td><strong><%= cp.code %></strong></td>
+                                <td><%= cp.discount %></td>
+                                <td><%= cp.max_limit %></td>
+                                <td><span class="badge active"><%= cp.status %></span></td>
+                                <td>
+                                    <button class="btn-del" onclick="deleteOrderItem('coupons', <%= cp.id %>)">Delete</button>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TAB 13: STOCK & INVENTORY -->
+            <div id="tab-stocks" class="tab-pane">
+                <div class="section-header">
+                    <h3>Stock & Inventory Raw Materials (<%= stocks.length %>)</h3>
+                    <button class="btn-add" onclick="openPromptModal('stock')">+ Add Stock Ingredient</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Ingredient Name</th>
+                            <th>Available Quantity</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% stocks.forEach(s => { %>
+                            <tr>
+                                <td><strong><%= s.name %></strong></td>
+                                <td><%= s.quantity %></td>
+                                <td><span class="badge active"><%= s.status %></span></td>
+                                <td>
+                                    <button class="btn-del" onclick="deleteOrderItem('stocks', <%= s.id %>)">Delete</button>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MODAL FOR ADDING FOOD DISH -->
+    <div class="modal-overlay" id="addDishModal">
+        <div class="modal-card">
+            <h3 style="color:var(--brand); font-size:1.2rem;">+ Add New Food Dish</h3>
+            <form id="addDishForm" style="display:flex; flex-direction:column; gap:1rem;">
+                <div class="form-group">
+                    <label>Dish Name</label>
+                    <input type="text" id="dishName" class="form-input" placeholder="e.g. Crispy Paneer Dosa" required>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="dishCategory" class="form-input">
+                        <% foodCategories.forEach(c => { %>
+                            <option value="<%= c.id %>"><%= c.name %></option>
+                        <% }) %>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Price (₹)</label>
+                    <input type="number" id="dishPrice" class="form-input" placeholder="e.g. 150" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="dishDesc" class="form-input" placeholder="Short description of ingredients">
+                </div>
+                <div style="display:flex; gap:0.75rem; margin-top:0.5rem;">
+                    <button type="button" onclick="closeAddDishModal()" style="flex:1; background:#374151; color:white; border:none; padding:0.65rem; border-radius:8px; font-weight:700; cursor:pointer;">Cancel</button>
+                    <button type="submit" style="flex:1; background:var(--brand-gradient); color:#0b0f19; border:none; padding:0.65rem; border-radius:8px; font-weight:800; cursor:pointer;">Save Dish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+<script>
+    function switchTab(tabId, el) {
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        
+        const target = document.getElementById(tabId);
+        if (target) target.classList.add('active');
+        if (el) el.classList.add('active');
+
+        const titleText = el ? el.querySelector('span').textContent : 'Dashboard & Analytics';
+        document.getElementById('currentTabTitle').textContent = titleText;
+
+        sessionStorage.setItem('canteen_admin_active_tab', tabId);
+        try { history.replaceState(null, null, '#' + tabId); } catch(e) {}
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        let savedTab = location.hash.replace('#', '') || sessionStorage.getItem('canteen_admin_active_tab');
+        if (savedTab && document.getElementById(savedTab)) {
+            const navEl = document.querySelector(`.nav-item[onclick*="${savedTab.replace('tab-', '')}"]`) || document.querySelector(`.nav-item[href="#${savedTab}"]`);
+            switchTab(savedTab, navEl);
+        }
+    });
+
+    function updateLivePreview() {
+        const prefix = document.getElementById('settingPrefix').value || '';
+        const suffix = document.getElementById('settingSuffix').value || '';
+        const digits = parseInt(document.getElementById('settingDigits').value || 6);
+        const counter = parseInt(document.getElementById('settingCounter').value || 1);
+        const padded = String(counter).padStart(digits, '0');
+        document.getElementById('liveNextPreview').textContent = `${prefix}${padded}${suffix}`;
+    }
+
+    document.getElementById('numberingSettingsForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const prefix = document.getElementById('settingPrefix').value;
+        const suffix = document.getElementById('settingSuffix').value;
+        const digit_count = document.getElementById('settingDigits').value;
+        const current_counter = document.getElementById('settingCounter').value;
+        const auto_hide_minutes = document.getElementById('settingAutoHide').value;
+
+        try {
+            const res = await fetch('/api/v1/admin/order-number-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prefix, suffix, digit_count, current_counter, auto_hide_minutes })
+            });
+            const data = await res.json();
+            alert('✅ Order Numbering & System Settings Saved Successfully!');
+            if (data && data.next_preview) {
+                document.getElementById('liveNextPreview').textContent = data.next_preview;
+            } else {
+                updateLivePreview();
+            }
+        } catch(err) {
+            alert('Failed to save numbering settings');
+        }
+    });
+
+    const SETTINGS_EYE_OPEN = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+    const SETTINGS_EYE_OFF = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+
+    function toggleSettingEye(inputId, btn) {
+        const el = document.getElementById(inputId);
+        if (!el) return;
+        const isHidden = el.type === 'password';
+        el.type = isHidden ? 'text' : 'password';
+        btn.innerHTML = isHidden ? SETTINGS_EYE_OFF : SETTINGS_EYE_OPEN;
+        btn.style.color = isHidden ? 'var(--brand)' : 'var(--text-muted)';
+    }
+
+    document.getElementById('adminCredentialsForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const msgBox = document.getElementById('credStatusMsg');
+        msgBox.style.display = 'none';
+
+        const current_password = document.getElementById('credCurrentPass').value;
+        const new_username = document.getElementById('credNewUsername').value;
+        const new_password = document.getElementById('credNewPass').value;
+        const confirm_password = document.getElementById('credConfirmPass').value;
+
+        try {
+            const res = await fetch('/api/v1/admin/settings/credentials', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ current_password, new_username, new_password, confirm_password })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Failed to update credentials');
+
+            msgBox.style.display = 'block';
+            msgBox.style.background = 'rgba(16, 185, 129, 0.15)';
+            msgBox.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+            msgBox.style.color = '#6ee7b7';
+            msgBox.textContent = data.message || 'Admin credentials updated!';
+            document.getElementById('currentAdminIdLabel').textContent = data.username;
+            document.getElementById('credCurrentPass').value = '';
+            document.getElementById('credNewPass').value = '';
+            document.getElementById('credConfirmPass').value = '';
+        } catch (err) {
+            msgBox.style.display = 'block';
+            msgBox.style.background = 'rgba(239, 68, 68, 0.15)';
+            msgBox.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+            msgBox.style.color = '#fca5a5';
+            msgBox.textContent = err.message;
+        }
+    });
+
+    async function toggleItem(id) {
+        try {
+            await fetch(`/api/v1/admin/items/${id}/toggle`, { method: 'PATCH' });
+            window.location.reload();
+        } catch(e) { alert('Toggle failed'); }
+    }
+
+    async function deleteOrderItem(moduleName, id) {
+        if (!confirm('Are you sure you want to delete this item?')) return;
+        try {
+            await fetch(`/api/v1/admin/${moduleName}/${id}`, { method: 'DELETE' });
+            window.location.reload();
+        } catch(e) { alert('Delete failed'); }
+    }
+
+    function openAddDishModal() {
+        document.getElementById('addDishModal').style.display = 'flex';
+    }
+
+    function closeAddDishModal() {
+        document.getElementById('addDishModal').style.display = 'none';
+    }
+
+    document.getElementById('addDishForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+            await fetch('/api/v1/admin/items', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: document.getElementById('dishName').value,
+                    category_id: document.getElementById('dishCategory').value,
+                    base_price: document.getElementById('dishPrice').value,
+                    description: document.getElementById('dishDesc').value,
+                })
+            });
+            window.location.reload();
+        } catch(e) { alert('Failed to save dish'); }
+    });
+
+    async function openPromptModal(type) {
+        if (type === 'category') {
+            const name = prompt('Enter New Food Category Name (e.g. Tandoori Special):');
+            if (!name) return;
+            await fetch('/api/v1/admin/categories', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name }) });
+        } else if (type === 'table') {
+            const name = prompt('Enter Dining Table Name (e.g. Table 11):');
+            const cap = prompt('Enter Seat Capacity:', '4');
+            if (!name) return;
+            await fetch('/api/v1/admin/tables', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, seat_capacity: cap }) });
+        } else if (type === 'user') {
+            const name = prompt('Enter Staff Member Name:');
+            const email = prompt('Enter Staff Email:');
+            if (!name) return;
+            await fetch('/api/v1/admin/users', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, email }) });
+        } else if (type === 'coupon') {
+            const code = prompt('Enter Coupon Code (e.g. SPECIAL50):');
+            const discount = prompt('Enter Discount Text:', '50% OFF');
+            if (!code) return;
+            await fetch('/api/v1/admin/coupons', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ code, discount }) });
+        } else if (type === 'stock') {
+            const name = prompt('Enter Stock Raw Ingredient Name:');
+            const qty = prompt('Enter Quantity:', '50 KG');
+            if (!name) return;
+            await fetch('/api/v1/admin/stocks', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, quantity: qty }) });
+        }
+        window.location.reload();
+    }
+
+    async function addCurrentIp(ip) {
+        try {
+            await fetch('/api/v1/admin/kitchen-ips', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ip_address: ip })
+            });
+            window.location.reload();
+        } catch(e) { alert('Failed to add IP'); }
+    }
+
+    async function addNewKitchenIp() {
+        const ip = document.getElementById('newKitchenIpInput').value;
+        if (!ip) return alert('Please enter an IP address');
+        try {
+            await fetch('/api/v1/admin/kitchen-ips', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ip_address: ip })
+            });
+            window.location.reload();
+        } catch(e) { alert('Failed to add IP'); }
+    }
+
+    async function updateOrderStatusFromAdmin(uuid, status) {
+        try {
+            await fetch('/kitchen/api/tickets/' + encodeURIComponent(uuid) + '/status', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+        } catch(err) {
+            alert('Failed to update order status: ' + err.message);
+        }
+    }
+
+    function printQrModal(title, path) {
+        const fullUrl = window.location.origin + path;
+        const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(fullUrl)}`;
+        const printWin = window.open('', '_blank', 'width=600,height=720');
+        printWin.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Print QR Poster - ${title}</title>
+                <style>
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 2rem; background: #f8fafc; color: #0f172a; }
+                    .card { border: 3px solid #0f172a; border-radius: 24px; padding: 2.5rem; max-width: 440px; margin: 0 auto; background: #ffffff; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+                    .header { font-size: 1.6rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; color: #0f172a; margin-bottom: 0.25rem; }
+                    .subtitle { font-size: 1.15rem; font-weight: 800; color: #d97706; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
+                    .qr-img { width: 240px; height: 240px; border-radius: 16px; border: 2px solid #0f172a; padding: 10px; margin-bottom: 1.5rem; background: #fff; }
+                    .instruction { font-size: 1.05rem; font-weight: 800; color: #1e293b; margin-bottom: 0.5rem; }
+                    .sub-instruction { font-size: 0.85rem; color: #64748b; line-height: 1.4; }
+                    .footer { margin-top: 1.5rem; font-size: 0.75rem; color: #64748b; font-family: monospace; border-top: 1px dashed #cbd5e1; padding-top: 1rem; word-break: break-all; }
+                    @media print {
+                        .no-print { display: none; }
+                        body { padding: 0; background: #fff; }
+                        .card { border: 2px solid #000; box-shadow: none; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="no-print" style="margin-bottom: 1.5rem;">
+                    <button onclick="window.print()" style="background: #2563eb; color: white; border: none; padding: 0.75rem 2rem; border-radius: 8px; font-weight: 800; font-size: 1rem; cursor: pointer; margin-right: 0.5rem;">🖨️ Print Poster (Ctrl+P)</button>
+                    <button onclick="window.close()" style="background: #64748b; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer;">Close</button>
+                </div>
+                <div class="card">
+                    <div class="header">MASTER CANTEEN</div>
+                    <div class="subtitle">${title}</div>
+                    <img src="${qrImgUrl}" class="qr-img" alt="QR Code">
+                    <div class="instruction">📱 SCAN WITH MOBILE CAMERA TO ORDER</div>
+                    <div class="sub-instruction">Select your favorite dishes & order instantly without waiting in long queues!</div>
+                    <div class="footer">${fullUrl}</div>
+                </div>
+            </body>
+            </html>
+        `);
+        printWin.document.close();
+    }
+
+    async function removeKitchenIp(encodedIp) {
+        try {
+            await fetch('/api/v1/admin/kitchen-ips/' + encodedIp, {
+                method: 'DELETE'
+            });
+            window.location.reload();
+        } catch(e) { alert('Failed to remove IP'); }
+    }
+
+    async function clearCompletedOrdersAdmin() {
+        if (!confirm('Are you sure you want to clear/archive all old completed and delivered orders? This will keep your live orders list 100% clean!')) return;
+        try {
+            const res = await fetch('/api/v1/admin/orders/clear-completed', { method: 'POST' });
+            const data = await res.json();
+            alert(data.message || 'Old completed orders cleared successfully!');
+            window.location.reload();
+        } catch(e) { alert('Failed to clear orders'); }
+    }
+
+    async function purgeAllOrdersAdmin() {
+        if (!confirm('⚠️ DANGER: Are you sure you want to PURGE ALL TEST ORDERS and RESET the counter to #1? This will start all new orders fresh from ORD-000001!')) return;
+        try {
+            const res = await fetch('/api/v1/admin/orders/purge-all', { method: 'POST' });
+            const data = await res.json();
+            alert(data.message || 'All orders purged! Counter reset to #1.');
+            window.location.reload();
+        } catch(e) { alert('Failed to purge orders'); }
+    }
+
+    async function toggleRemotePreorder() {
+        try {
+            const res = await fetch('/api/v1/admin/settings/preorder-toggle', { method: 'POST', headers: {'Content-Type':'application/json'} });
+            const data = await res.json();
+            alert(data.message || 'Pre-ordering toggle updated!');
+            window.location.reload();
+        } catch(e) { alert('Failed to toggle pre-ordering setting'); }
+    }
+
+    
+    async function toggleGoogleAuth() {
+        try {
+            const res = await fetch('/api/v1/admin/settings/google-auth-toggle', { method: 'POST', headers: {'Content-Type':'application/json'} });
+            const data = await res.json();
+            alert(data.message || 'Google Auth setting updated!');
+            window.location.reload();
+        } catch(e) { alert('Failed to toggle Google Auth setting'); }
+    }
+
+    async function toggleCanteenPin() {
+        try {
+            const res = await fetch('/api/v1/admin/settings/canteen-pin-toggle', { method: 'POST', headers: {'Content-Type':'application/json'} });
+            const data = await res.json();
+            alert(data.message || 'Canteen TV PIN setting updated!');
+            window.location.reload();
+        } catch(e) { alert('Failed to toggle Canteen TV PIN setting'); }
+    }
+
+    async function setDomainRestriction(domainVal) {
+        try {
+            const res = await fetch('/api/v1/admin/settings/domain-toggle', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ domain: domainVal })
+            });
+            const data = await res.json();
+            window.location.reload();
+        } catch(e) { alert('Failed to update domain restriction'); }
+    }
+
+    async function toggleDomainRestriction() {
+        try {
+            const res = await fetch('/api/v1/admin/settings/domain-toggle', { method: 'POST', headers: {'Content-Type':'application/json'} });
+            const data = await res.json();
+            alert(data.message || 'Email domain restriction toggle updated!');
+            window.location.reload();
+        } catch(e) { alert('Failed to toggle email domain restriction setting'); }
+    }
+
+    function renderAdminOrdersTable(ticketsList) {
+        const tbody = document.getElementById('adminOrdersTbody');
+        const headerTitleEl = document.querySelector('#tab-orders .section-header h3');
+        if (headerTitleEl && ticketsList) {
+            headerTitleEl.textContent = `Orders Management (${ticketsList.length})`;
+        }
+        if (!tbody) return;
+        if (!ticketsList || !ticketsList.length) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No active orders available right now.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = ticketsList.map(order => {
+            const orderNum = order.order_number || order.ticket_number || 'ORD-LIVE';
+            const key = order.uuid || order.order_number;
+            const custName = (order.customer_name || 'Guest').replace(/"/g, '&quot;');
+            const custPhone = (order.customer_phone || '9999999999').replace(/"/g, '&quot;');
+            const tableNum = (order.table_number || 'Table 1').replace(/"/g, '&quot;');
+            const statusVal = order.status || 'pending';
+            const orderId = order.id || order.uuid;
+
+            return `
+                <tr>
+                    <td><strong>${orderNum}</strong></td>
+                    <td>${tableNum}</td>
+                    <td>${custName} (${custPhone})</td>
+                    <td>₹${parseFloat(order.total_amount || 150).toFixed(2)}</td>
+                    <td>
+                        <select id="status-select-${key}" class="form-input" style="padding:0.25rem 0.5rem; font-size:0.8rem; border-radius:4px; font-weight:700; background:#0f172a; color:#fff;" onchange="updateOrderStatusFromAdmin('${key}', this.value)">
+                            <option value="pending" ${statusVal === 'pending' ? 'selected' : ''}>🟡 PENDING</option>
+                            <option value="preparing" ${statusVal === 'preparing' ? 'selected' : ''}>🔵 PREPARING</option>
+                            <option value="ready" ${statusVal === 'ready' ? 'selected' : ''}>🟢 READY</option>
+                            <option value="delivered" ${statusVal === 'delivered' ? 'selected' : ''}>🍇 DELIVERED</option>
+                            <option value="completed" ${statusVal === 'completed' ? 'selected' : ''}>✅ COMPLETED</option>
+                            <option value="cancelled" ${statusVal === 'cancelled' ? 'selected' : ''}>🔴 CANCELLED</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button class="btn-del" onclick="deleteOrderItem('orders', '${orderId}')">Delete</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    let lastCartsHash = '';
+    function renderAdminCartsTable(cartsList) {
+        const tbody = document.getElementById('adminCartsTbody');
+        const headerTitleEl = document.querySelector('#tab-carts .section-header h3');
+        const cartsBadgeEl = document.getElementById('nav-badge-carts');
+
+        const totalCartsCount = (cartsList && Array.isArray(cartsList)) ? cartsList.length : 0;
+
+        if (headerTitleEl) {
+            headerTitleEl.textContent = `Active Customer Carts (${totalCartsCount})`;
+        }
+        if (cartsBadgeEl) {
+            cartsBadgeEl.textContent = totalCartsCount;
+        }
+        if (!tbody) return;
+        if (!cartsList || !cartsList.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No active draft customer carts right now.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = cartsList.map(c => {
+            const itemNames = (c.items || []).map(i => `${i.item_name} (x${i.quantity})`).join(', ');
+            return `
+                <tr>
+                    <td><code>${c.uuid}</code></td>
+                    <td><strong style="color:var(--brand);">${c.table_name || 'Table 1'}</strong></td>
+                    <td>${c.items_count} Dishes <small style="color:var(--text-muted); font-size:0.75rem;">(${itemNames})</small></td>
+                    <td>₹${parseFloat(c.total_amount || 0).toFixed(2)}</td>
+                    <td><span class="badge active">ACTIVE SESSION</span></td>
+                    <td>
+                        <button class="btn-del" onclick="deleteActiveCartAdmin('${c.uuid}')">🗑️ Delete</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    async function deleteActiveCartAdmin(cartUuid) {
+        if (!confirm('Are you sure you want to delete this active draft cart session?')) return;
+        try {
+            await fetch('/api/v1/admin/active-carts/' + encodeURIComponent(cartUuid), { method: 'DELETE' });
+            window.location.reload();
+        } catch(e) { alert('Failed to delete cart session'); }
+    }
+
+    async function clearAllActiveCartsAdmin() {
+        if (!confirm('Are you sure you want to clear ALL unplaced active draft cart sessions?')) return;
+        try {
+            await fetch('/api/v1/admin/active-carts/clear-all', { method: 'POST' });
+            window.location.reload();
+        } catch(e) { alert('Failed to clear active carts'); }
+    }
+
+    // REAL-TIME GLOBAL ADMIN AUTO-REFRESH (Sidebar Badges + Orders Table + Active Carts - 0% Page Reload!)
+    let lastOrdersHash = '';
+    setInterval(async () => {
+        try {
+            const res = await fetch('/kitchen/api/tickets');
+            const data = await res.json();
+            if (data && data.data) {
+                const totalCount = data.data.length;
+                
+                // ALWAYS Update Sidebar Badges dynamically in background!
+                const ordersBadgeEl = document.getElementById('nav-badge-orders');
+                const kotBadgeEl = document.getElementById('nav-badge-kot');
+                if (ordersBadgeEl) ordersBadgeEl.textContent = totalCount;
+                if (kotBadgeEl) kotBadgeEl.textContent = totalCount;
+
+                const currentHash = JSON.stringify(data.data.map(t => `${t.order_number}-${t.status}-${t.total_amount}`));
+                if (currentHash !== lastOrdersHash) {
+                    lastOrdersHash = currentHash;
+                    const activeEl = document.activeElement;
+                    if (!activeEl || !activeEl.id || !activeEl.id.startsWith('status-select-')) {
+                        renderAdminOrdersTable(data.data);
+                    }
+                }
+            }
+
+            // Sync Active Customer Carts in Real-Time (2s Poller)
+            try {
+                const cRes = await fetch('/api/v1/admin/active-carts');
+                const cData = await cRes.json();
+                if (cData && cData.data) {
+                    const cHash = JSON.stringify(cData.data.map(c => `${c.uuid}-${c.table_name}-${c.items_count}-${c.total_amount}`));
+                    if (cHash !== lastCartsHash) {
+                        lastCartsHash = cHash;
+                        renderAdminCartsTable(cData.data);
+                    }
+                }
+            } catch(e) {}
+        } catch(e) {}
+    }, 2000);
+</script>
+</body>
+</html>

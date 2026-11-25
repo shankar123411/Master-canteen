@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table <%= table.name || table.table_number %> - Master Canteen</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg: #f8f7f4;
+            --panel: #ffffff;
+            --line: #e5e7eb;
+            --ink: #111827;
+            --muted: #6b7280;
+            --gold: #c59b27;
+            --gold-hover: #b0871e;
+            --gold-light: #fefce8;
+            --gold-border: #fef08a;
+            --radius: 16px;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif; }
+        body { background: var(--bg); color: var(--ink); line-height: 1.5; padding-bottom: 80px; }
+        
+        /* HEADER */
+        .header { background: #ffffff; border-bottom: 1px solid var(--line); padding: 1.1rem 2.25rem; position: sticky; top: 0; z-index: 20; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+        .header h1 { font-size: 1.35rem; font-weight: 800; color: var(--ink); display: flex; align-items: center; gap: 0.6rem; letter-spacing: -0.3px; }
+        .header h1 svg { color: var(--gold); }
+        .header .table-badge { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; padding: 0.4rem 1.1rem; border-radius: 999px; font-size: 0.85rem; font-weight: 700; }
+
+        .container { max-width: 1240px; margin: 2rem auto; padding: 0 1.5rem; display: grid; grid-template-columns: 1fr 380px; gap: 2rem; }
+        @media (max-width: 880px) { .container { grid-template-columns: 1fr; } }
+
+        /* CATEGORY TABS */
+        .menu-section { display: flex; flex-direction: column; gap: 1.75rem; }
+        .categories-wrapper { display: flex; justify-content: center; width: 100%; margin-bottom: 0.5rem; }
+        .categories { display: flex; gap: 0.75rem; overflow-x: auto; padding: 0.25rem; scrollbar-width: none; flex-wrap: wrap; justify-content: center; }
+        
+        .cat-chip { background: #ffffff; border: 1.5px solid var(--line); color: #4b5563; padding: 0.6rem 1.5rem; border-radius: 999px; cursor: pointer; white-space: nowrap; font-size: 0.9rem; font-weight: 600; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .cat-chip:hover { border-color: var(--gold); color: var(--gold); }
+        .cat-chip.active { background: var(--gold); color: #ffffff; border-color: var(--gold); box-shadow: 0 4px 14px rgba(197, 155, 39, 0.35); font-weight: 700; }
+
+        /* DISH CARDS GRID */
+        .dishes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
+
+        .item-card { background: #ffffff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1.25rem; transition: all 0.25s ease; box-shadow: var(--shadow); position: relative; }
+        .item-card:hover { transform: translateY(-4px); border-color: var(--gold); box-shadow: 0 16px 30px -10px rgba(197, 155, 39, 0.15); }
+        
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
+        .cat-badge { background: #f3f4f6; color: #6b7280; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; padding: 0.25rem 0.65rem; border-radius: 6px; }
+
+        .item-info h3 { font-size: 1.15rem; font-weight: 700; color: var(--ink); margin-top: 0.5rem; line-height: 1.3; }
+        .item-info p { font-size: 0.85rem; color: var(--muted); margin-top: 0.4rem; line-height: 1.45; }
+        
+        .card-bottom { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--line); padding-top: 1rem; margin-top: 0.25rem; }
+        .item-price { font-weight: 800; font-size: 1.2rem; color: var(--gold); }
+
+        .btn-add { background: var(--gold); color: #ffffff; border: none; padding: 0.55rem 1.3rem; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 10px rgba(197, 155, 39, 0.25); }
+        .btn-add:hover { background: var(--gold-hover); transform: scale(1.03); }
+
+        .card-qty-controls { display: flex; align-items: center; gap: 0.5rem; background: #fefce8; border: 1.5px solid var(--gold); padding: 0.25rem 0.5rem; border-radius: 8px; }
+        .card-qty-btn { border: none; background: none; color: var(--gold); font-weight: 800; cursor: pointer; width: 26px; height: 26px; font-size: 1.1rem; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .card-qty-btn:hover { background: var(--gold); color: white; }
+        .card-qty-val { font-weight: 800; font-size: 0.95rem; color: #92400e; min-width: 20px; text-align: center; }
+
+        /* CART PANEL */
+        .cart-panel { background: #ffffff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; height: fit-content; position: sticky; top: 95px; box-shadow: var(--shadow); }
+        .cart-title { font-size: 1.2rem; font-weight: 800; border-bottom: 1px solid var(--line); padding-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; color: var(--ink); }
+        
+        .cart-items { display: flex; flex-direction: column; gap: 0.85rem; max-height: 280px; overflow-y: auto; }
+        .cart-item { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; border-bottom: 1px dashed var(--line); padding-bottom: 0.75rem; }
+        .qty-controls { display: flex; align-items: center; gap: 0.6rem; background: #f9fafb; padding: 0.3rem 0.65rem; border-radius: 8px; border: 1px solid var(--line); }
+        .qty-btn { border: none; background: none; color: var(--ink); font-weight: 800; cursor: pointer; width: 22px; height: 22px; font-size: 1rem; }
+
+        .cart-summary { border-top: 1px dashed var(--line); padding-top: 0.85rem; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.9rem; color: var(--muted); }
+        .cart-summary .row { display: flex; justify-content: space-between; }
+        .cart-summary .total { font-weight: 800; font-size: 1.2rem; color: var(--ink); border-top: 1px solid var(--line); padding-top: 0.75rem; margin-top: 0.3rem; }
+
+        .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+        .form-group label { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+        .form-input { padding: 0.65rem 0.85rem; border: 1px solid var(--line); border-radius: 8px; background: #ffffff; color: var(--ink); font-size: 0.9rem; transition: border-color 0.2s; }
+        .form-input:focus { outline: none; border-color: var(--gold); }
+
+        .btn-checkout { background: var(--gold); color: #ffffff; border: none; padding: 0.9rem; border-radius: 10px; font-weight: 800; font-size: 1.05rem; cursor: pointer; text-align: center; width: 100%; box-shadow: 0 4px 15px rgba(197, 155, 39, 0.35); transition: all 0.2s; }
+        .btn-checkout:hover { background: var(--gold-hover); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(197, 155, 39, 0.5); }
+        .btn-checkout:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .tracking-box { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: var(--radius); padding: 1.25rem; display: none; flex-direction: column; gap: 0.6rem; font-size: 0.9rem; margin-top: 1rem; color: #065f46; }
+        .tag { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
+        .tag.pending { background: #fef3c7; color: #92400e; }
+        .tag.preparing, .tag.accepted { background: #dbeafe; color: #1e40af; }
+        .tag.ready { background: #fef08a; color: #854d0e; }
+        .tag.completed, .tag.delivered { background: #d1fae5; color: #065f46; }
+        .tag.cancelled { background: #fee2e2; color: #991b1b; }
+
+        .status-msg { font-size: 0.85rem; padding: 0.65rem 0.85rem; border-radius: 8px; display: none; font-weight: 600; }
+        .status-msg.ok { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; display: block; }
+        .status-msg.warn { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; display: block; }
+
+        /* PAYMENT GATEWAY SELECTION MODAL */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(17, 24, 39, 0.85); backdrop-filter: blur(12px); display: none; justify-content: center; align-items: center; z-index: 100; padding: 1rem; }
+        .payment-modal { background: #ffffff; border-radius: 24px; padding: 2rem; width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 1.25rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); border: 1px solid var(--line); position: relative; }
+        
+        .pay-tab-btn { padding: 0.5rem 1rem; border: 1.5px solid var(--line); background: white; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; color: var(--ink); }
+        .pay-tab-btn.active { border-color: var(--gold); background: #fefce8; color: var(--gold); }
+
+        /* OPTION 2: SLEEK MODERN DARK GLASSMORPHISM AMBIENT PAYMENT SCREEN */
+        .glass-payment-overlay { 
+            position: fixed; inset: 0; 
+            background: radial-gradient(circle at 50% 30%, #1e1b4b 0%, #0f172a 60%, #020617 100%);
+            display: none; flex-direction: column; justify-content: center; align-items: center; 
+            z-index: 300; color: white; text-align: center; overflow: hidden; padding: 1.5rem;
+        }
+
+        /* Ambient Wave Pulsing Blob in background */
+        .ambient-blob { position: absolute; width: 350px; height: 350px; background: radial-gradient(circle, rgba(197, 155, 39, 0.4) 0%, rgba(99, 102, 241, 0.2) 60%, rgba(0, 0, 0, 0) 100%); filter: blur(60px); border-radius: 50%; animation: floatBlob 6s ease-in-out infinite alternate; pointer-events: none; }
+        @keyframes floatBlob { 0% { transform: translate(-80px, -60px) scale(0.9); } 100% { transform: translate(80px, 60px) scale(1.2); } }
+
+        /* Sleek Glassmorphism Card Container */
+        .glass-card { 
+            position: relative; z-index: 10;
+            background: rgba(255, 255, 255, 0.06); 
+            border: 1px solid rgba(255, 255, 255, 0.16); 
+            backdrop-filter: blur(24px); 
+            border-radius: 28px; 
+            padding: 2.5rem 2rem; 
+            width: 100%; max-width: 420px; 
+            display: flex; flex-direction: column; align-items: center; gap: 1.25rem; 
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2); 
+        }
+
+        /* Ring Spinner Timer */
+        .ring-timer-box { position: relative; width: 110px; height: 110px; display: flex; justify-content: center; align-items: center; }
+        .ring-timer-svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+        .ring-timer-circle { fill: none; stroke: rgba(255, 255, 255, 0.1); stroke-width: 6; }
+        .ring-timer-progress { fill: none; stroke: var(--gold); stroke-width: 6; stroke-dasharray: 283; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear; stroke-linecap: round; }
+        .ring-timer-text { position: absolute; font-family: monospace; font-size: 1.5rem; font-weight: 800; color: var(--gold); }
+
+        /* 3D Food Victory Card Receipt */
+        .victory-card { 
+            display: none; flex-direction: column; align-items: center; gap: 0.85rem; 
+            background: rgba(255, 255, 255, 0.12); border: 1.5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 24px; padding: 2rem 1.5rem; width: 100%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            animation: victoryPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes victoryPop { 0% { transform: scale(0.6) translateY(20px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
+
+        .check-badge { width: 68px; height: 68px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; color: white; font-weight: 800; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4); }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path></svg>
+            Master Canteen
+        </h1>
+        <div style="display: flex; align-items: center; gap: 0.8rem;">
+            <% if (typeof studentUser !== 'undefined' && studentUser) { %>
+                <div style="display: flex; align-items: center; gap: 0.6rem; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 0.35rem 0.85rem; border-radius: 999px;">
+                    <img src="<%= studentUser.avatar || 'https://lh3.googleusercontent.com/a/default-user' %>" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
+                    <span style="font-size: 0.82rem; font-weight: 700; color: #166534;"><%= studentUser.name %></span>
+                    <a href="/auth/logout" style="font-size: 0.75rem; color: #ef4444; text-decoration: none; font-weight: 700; margin-left: 4px;">Logout</a>
+                </div>
+            <% } else if (typeof orderSettings !== 'undefined' && orderSettings.require_google_auth) { %>
+                <a href="/auth/google" style="display: flex; align-items: center; gap: 0.5rem; background: #ffffff; border: 1.5px solid #cbd5e1; padding: 0.45rem 1.1rem; border-radius: 999px; font-size: 0.85rem; font-weight: 700; color: #1e293b; text-decoration: none; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.2s;" onmouseover="this.style.borderColor='#4285F4'" onmouseout="this.style.borderColor='#cbd5e1'">
+                    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                    Sign in with Google
+                </a>
+            <% } %>
+            <div class="table-badge"><%= table.name || 'Table ' + table.id %></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- MENU SECTION -->
+        <div class="menu-section">
+            <div class="categories-wrapper">
+                <div class="categories" id="categoryContainer">
+                    <button class="cat-chip active" onclick="filterCategory('all', this)">All</button>
+                    <button class="cat-chip" onclick="filterCategory(1, this)">South Indian</button>
+                    <button class="cat-chip" onclick="filterCategory(2, this)">Biryani & Rice</button>
+                    <button class="cat-chip" onclick="filterCategory(3, this)">Snacks & Starters</button>
+                    <button class="cat-chip" onclick="filterCategory(4, this)">North Indian</button>
+                    <button class="cat-chip" onclick="filterCategory(5, this)">Beverages</button>
+                    <button class="cat-chip" onclick="filterCategory(6, this)">Desserts</button>
+                </div>
+            </div>
+
+            <div id="itemsContainer" class="dishes-grid">
+                <p style="color:var(--muted); text-align:center; grid-column: 1/-1;">Loading Menu...</p>
+            </div>
+        </div>
+
+        <!-- CART & CHECKOUT -->
+        <div class="cart-panel">
+            <div class="cart-title">
+                <span>Your Order Cart</span>
+                <button id="refreshCartBtn" style="background:none; border:none; color:var(--gold); cursor:pointer; font-size:0.85rem; font-weight:700;">New Order</button>
+            </div>
+
+            <div id="statusMsg" class="status-msg"></div>
+
+            <div class="cart-items" id="cartItemsContainer">
+                <p style="color:var(--muted); font-size:0.9rem;">Your cart is empty.</p>
+            </div>
+
+            <div class="cart-summary" id="cartSummary" style="display:none;">
+                <div class="row"><span>Subtotal</span><span id="subtotalVal">₹0.00</span></div>
+                <div class="row"><span>GST (5%)</span><span id="taxVal">₹0.00</span></div>
+                <div class="row total"><span>Total Pay</span><span id="totalVal">₹0.00</span></div>
+            </div>
+
+            <div class="form-group">
+                <label>Customer Name <span style="font-weight:400; color:var(--muted);">(Optional)</span></label>
+                <input type="text" id="customerName" class="form-input" placeholder="Guest Customer">
+            </div>
+
+            <div class="form-group">
+                <label>Phone Number <span style="font-weight:400; color:var(--muted);">(Optional)</span></label>
+                <input type="tel" id="customerPhone" class="form-input" placeholder="9999999999">
+            </div>
+
+            <div class="form-group">
+                <label>Special Instructions <span style="font-weight:400; color:var(--muted);">(Optional)</span></label>
+                <input type="text" id="orderInstructions" class="form-input" placeholder="Less spicy, extra spoon, etc.">
+            </div>
+
+            <% 
+                const isRemoteTarget = (typeof is_takeaway !== 'undefined' && is_takeaway) || (table && (table.id == 999 || table.uuid === 'tab_999' || (table.name && (table.name.toLowerCase().includes('takeaway') || table.name.toLowerCase().includes('delivery'))))); 
+            %>
+            <% if (typeof orderSettings !== 'undefined' && orderSettings.allow_remote_preorder === false && isRemoteTarget) { %>
+                <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 1rem 1.25rem; border-radius: 12px; margin: 1rem 0; text-align: center; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);">
+                    <div style="font-size: 1.05rem; font-weight: 800; margin-bottom: 0.25rem;">📍 Canteen Table QR Scan Required!</div>
+                    <div style="font-size: 0.85rem; opacity: 0.95; line-height: 1.4;">
+                        Classroom remote ordering & Takeaway links are currently disabled by Canteen Admin.<br>
+                        <strong>Kindly visit Master Canteen & scan any physical Table QR Code</strong> to place your order!
+                    </div>
+                </div>
+            <% } %>
+
+            <button id="openPaymentModalBtn" class="btn-checkout" disabled>Proceed to Payment Gateway</button>
+
+            <!-- TRACKING BOX -->
+            <div class="tracking-box" id="trackingBox"></div>
+        </div>
+    </div>
+
+    <!-- PAYMENT GATEWAY SELECTION MODAL -->
+    <div class="modal-overlay" id="paymentModal">
+        <div class="payment-modal">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding-bottom:0.75rem;">
+                <div>
+                    <h3 style="font-size:1.2rem; font-weight:800; color:var(--ink);">Cashfree / All-in-One Payment Gateway</h3>
+                    <p style="font-size:0.8rem; color:var(--muted)">Master Canteen Fast Secure Checkout</p>
+                </div>
+                <button onclick="closePaymentModal()" style="background:none; border:none; font-size:1.2rem; cursor:pointer; font-weight:800; color:var(--muted);">✕</button>
+            </div>
+
+            <div style="background:#fefce8; border:1px solid #fef08a; padding:1rem; border-radius:12px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.9rem; color:#92400e; font-weight:700;">Total Payable Amount:</span>
+                <span style="font-size:1.35rem; font-weight:800; color:var(--gold);" id="modalPayTotal">₹0.00</span>
+            </div>
+
+            <!-- 15-SECOND DYNAMIC CANTEEN LIVE PIN FIELD -->
+            <!-- 15-SECOND DYNAMIC CANTEEN LIVE PIN FIELD -->
+            <div id="pinContainerSection" style="<%= (typeof orderSettings !== 'undefined' && orderSettings.require_canteen_pin === false) ? 'display:none;' : '' %>">
+                <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:0.85rem 1rem; border-radius:12px; margin:0.5rem 0 0.25rem 0;">
+                    <label style="display:block; font-size:0.8rem; font-weight:800; color:#166534; margin-bottom:0.35rem;">
+                        🔒 ENTER CANTEEN LIVE TV DISPLAY PIN (15s Refresh)
+                    </label>
+                    <div>
+                        <input type="text" id="canteenPinInput" class="form-input" placeholder="Look at Canteen TV & enter 6-digit PIN" maxlength="6" oninput="validateCanteenPinLive()" style="width:100%; font-weight:800; font-family:monospace; letter-spacing:4px; text-align:center; font-size:1.25rem; border:2px solid #cbd5e1; color:#0f172a; background:#fff; border-radius:10px; padding:0.6rem;">
+                    </div>
+                    <div id="pinValidationBadge" style="font-size:0.78rem; font-weight:700; margin-top:0.35rem; display:none;"></div>
+                    <small style="color:#15803d; font-size:0.75rem; display:block; margin-top:0.25rem;">
+                        📺 Look at the live Canteen TV Display Screen to see the current 6-digit PIN.
+                    </small>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:0.4rem; justify-content:center; margin:0.25rem 0;">
+                <button class="pay-tab-btn active" onclick="switchPayTab('upi', this)">UPI App</button>
+                <button class="pay-tab-btn" onclick="switchPayTab('card', this)">Card</button>
+                <button class="pay-tab-btn" onclick="switchPayTab('netbank', this)">NetBanking</button>
+                <button class="pay-tab-btn" onclick="switchPayTab('cash', this)">Cash</button>
+            </div>
+
+            <!-- TAB 1: UPI -->
+            <div id="tabUpi" class="pay-tab-content">
+                <div class="form-group">
+                    <label>Enter UPI VPA / ID</label>
+                    <input type="text" id="upiIdInput" class="form-input" value="success@upi" style="font-weight:700; border-color:var(--gold);">
+                </div>
+                <div style="display:flex; gap:0.4rem; margin-top:0.5rem; justify-content:center;">
+                    <button onclick="setDummyUpi('success@upi')" style="background:#f3f4f6; border:1px solid var(--line); padding:0.35rem 0.6rem; border-radius:6px; font-size:0.8rem; font-weight:700; cursor:pointer;">GPay</button>
+                    <button onclick="setDummyUpi('success@ybl')" style="background:#f3f4f6; border:1px solid var(--line); padding:0.35rem 0.6rem; border-radius:6px; font-size:0.8rem; font-weight:700; cursor:pointer;">PhonePe</button>
+                    <button onclick="setDummyUpi('failed@upi')" style="background:#fee2e2; border:1px solid #fecaca; color:#991b1b; padding:0.35rem 0.6rem; border-radius:6px; font-size:0.8rem; font-weight:700; cursor:pointer;">Test Failure ❌</button>
+                </div>
+            </div>
+
+            <!-- TAB 2: CREDIT / DEBIT CARD -->
+            <div id="tabCard" class="pay-tab-content" style="display:none;">
+                <div class="form-group">
+                    <label>Card Number</label>
+                    <input type="text" class="form-input" value="4532 •••• •••• 8892" readonly>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-top:0.4rem;">
+                    <div class="form-group"><label>Expiry</label><input type="text" class="form-input" value="12/28" readonly></div>
+                    <div class="form-group"><label>CVV</label><input type="text" class="form-input" value="882" readonly></div>
+                </div>
+            </div>
+
+            <!-- TAB 3: NET BANKING -->
+            <div id="tabNetbank" class="pay-tab-content" style="display:none;">
+                <div class="form-group">
+                    <label>Select Bank</label>
+                    <select class="form-input" style="font-weight:700;">
+                        <option>HDFC Bank Instant</option>
+                        <option>State Bank of India</option>
+                        <option>ICICI Netbanking</option>
+                        <option>Axis Bank</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- TAB 4: CASH -->
+            <div id="tabCash" class="pay-tab-content" style="display:none;">
+                <p style="font-size:0.85rem; color:var(--muted); text-align:center;">Pay directly to counter or waiter upon food delivery.</p>
+            </div>
+
+            <button id="startGlassPayBtn" class="btn-checkout" style="margin-top:0.5rem;">Pay & Verify Order</button>
+        </div>
+    </div>
+
+    <!-- OPTION 2: SLEEK MODERN DARK GLASSMORPHISM AMBIENT PAYMENT SCREEN -->
+    <div class="glass-payment-overlay" id="glassOverlay">
+        <div class="ambient-blob"></div>
+
+        <div class="glass-card">
+            <!-- STEP A: PROCESSING TIMER RING -->
+            <div id="glassStepProcessing" style="display:flex; flex-direction:column; align-items:center; gap:1.25rem; width:100%;">
+                <h3 style="font-size:1.35rem; font-weight:800; color:#ffffff;">Authenticating Payment</h3>
+                <p style="font-size:0.85rem; color:#94a3b8; max-width:280px;">Verifying bank token & network handshake...</p>
+
+                <div class="ring-timer-box">
+                    <svg class="ring-timer-svg" viewBox="0 0 100 100">
+                        <circle class="ring-timer-circle" cx="50" cy="50" r="45"></circle>
+                        <circle class="ring-timer-progress" id="ringProgress" cx="50" cy="50" r="45"></circle>
+                    </svg>
+                    <div class="ring-timer-text" id="glassTimerText">00:04</div>
+                </div>
+
+                <div style="font-size:0.8rem; font-weight:700; color:var(--gold); display:flex; align-items:center; gap:0.4rem;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    256-Bit Encrypted Bank Handshake
+                </div>
+            </div>
+
+            <!-- STEP B: 3D FOOD VICTORY RECEIPT CARD (SUCCESS) -->
+            <div class="victory-card" id="glassStepSuccess">
+                <div class="check-badge">✓</div>
+                <h3 style="font-size:1.4rem; font-weight:800; color:#ffffff;">Payment Successful!</h3>
+                <div style="font-size:1.6rem; font-weight:800; color:var(--gold);" id="glassPaidAmount">₹0.00</div>
+                <p style="font-size:0.8rem; color:#94a3b8;">Transaction ID: <strong id="glassTxnId" style="color:white;">TXN_98745612</strong></p>
+                <div style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); padding:0.6rem 1.2rem; border-radius:12px; font-size:0.85rem; font-weight:700; color:#cbd5e1; margin-top:0.4rem; display:flex; align-items:center; gap:0.5rem;">
+                    <span>🍲</span> <span>Kitchen Order Ticket (KOT) Generated!</span>
+                </div>
+            </div>
+
+            <!-- STEP C: FAILURE SCREEN -->
+            <div class="victory-card" id="glassStepFailed" style="border-color:rgba(239, 68, 68, 0.4);">
+                <div class="check-badge" style="background:linear-gradient(135deg, #ef4444, #dc2626);">✕</div>
+                <h3 style="font-size:1.4rem; font-weight:800; color:#fca5a5;">Payment Failed</h3>
+                <p style="font-size:0.9rem; color:#f87171; font-weight:700;">Insufficient Balance / Network Timeout!</p>
+                <p style="font-size:0.8rem; color:#cbd5e1;">Please try again or select another payment method.</p>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const tableUuid = "<%= table.uuid || table.id %>";
+    
+    let cartUuid = sessionStorage.getItem(`canteen_cart_${tableUuid}`);
+    if (!cartUuid) {
+        cartUuid = 'cart_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now();
+        sessionStorage.setItem(`canteen_cart_${tableUuid}`, cartUuid);
+    }
+
+    let activeOrderUuid = sessionStorage.getItem(`canteen_order_${tableUuid}`);
+
+    const APP_CONFIG = {
+        requireGoogleAuth: <%= (typeof orderSettings !== 'undefined' && orderSettings.require_google_auth) ? 'true' : 'false' %>,
+        requireCanteenPin: <%= (typeof orderSettings !== 'undefined' && orderSettings.require_canteen_pin) ? 'true' : 'false' %>,
+        allowRemotePreorder: <%= (typeof orderSettings !== 'undefined' && orderSettings.allow_remote_preorder !== false) ? 'true' : 'false' %>,
+        restrictEmailDomain: "<%= (typeof orderSettings !== 'undefined' && orderSettings.restrict_email_domain) ? orderSettings.restrict_email_domain : '' %>",
+        isLoggedIn: <%= (typeof studentUser !== 'undefined' && studentUser) ? 'true' : 'false' %>
+    };
+
+    const state = {
+        items: [
+            { id: 1, food_category_id: 1, category_name: 'SOUTH INDIAN', name: 'Ghee Masala Dosa', description: 'Crispy Golden Dosa served with Madras Sambar & 3 Chutneys', base_price: 120.00 },
+            { id: 2, food_category_id: 1, category_name: 'SOUTH INDIAN', name: 'Idli Sambar Set (3 Pcs)', description: 'Steamed Fluffy Rice Cakes with Special Sambar', base_price: 70.00 },
+            { id: 3, food_category_id: 1, category_name: 'SOUTH INDIAN', name: 'Special Rava Onion Dosa', description: 'Crispy Semolina Dosa studded with onions and cashews', base_price: 140.00 },
+            { id: 4, food_category_id: 2, category_name: 'BIRYANI & RICE', name: 'Hyderabadi Veg Biryani', description: 'Aromatic Basmati Rice dum cooked with exotic vegetables & spices', base_price: 190.00 },
+            { id: 5, food_category_id: 2, category_name: 'BIRYANI & RICE', name: 'Paneer Tikka Biryani', description: 'Char-grilled Paneer Cubes layered in fragrant saffron rice', base_price: 220.00 },
+            { id: 6, food_category_id: 2, category_name: 'BIRYANI & RICE', name: 'Schezwan Fried Rice', description: 'Spicy Indo-Chinese fried rice loaded with crunchy veggies', base_price: 160.00 },
+            { id: 7, food_category_id: 3, category_name: 'SNACKS', name: 'Paneer 65 Crispy', description: 'Deep fried spiced cottage cheese cubes with curry leaves', base_price: 160.00 },
+            { id: 8, food_category_id: 3, category_name: 'SNACKS', name: 'Gobi Manchurian Dry', description: 'Crispy cauliflower florets tossed in tangy soya garlic sauce', base_price: 150.00 },
+            { id: 9, food_category_id: 4, category_name: 'NORTH INDIAN', name: 'Paneer Butter Masala', description: 'Rich cashew gravy with tender paneer cubes & butter', base_price: 210.00 },
+            { id: 10, food_category_id: 4, category_name: 'NORTH INDIAN', name: 'Butter Naan (2 Pcs)', description: 'Soft tandoori leavened flatbread brushed with fresh butter', base_price: 60.00 },
+            { id: 11, food_category_id: 5, category_name: 'BEVERAGES', name: 'Filter Coffee (Special)', description: 'Traditional South Indian Brass Tumbler Brewed Coffee', base_price: 35.00 },
+            { id: 12, food_category_id: 5, category_name: 'BEVERAGES', name: 'Mango Lassi Thick', description: 'Sweet creamy yogurt shake infused with Alphonso mango pulp', base_price: 85.00 },
+            { id: 13, food_category_id: 5, category_name: 'BEVERAGES', name: 'Cold Coffee Milkshake', description: 'Chilled espresso blended with thick milk and vanilla ice cream', base_price: 110.00 },
+            { id: 14, food_category_id: 6, category_name: 'DESSERTS', name: 'Gulab Jamun with Ice Cream', description: 'Warm mawa dumplings served with vanillla ice cream', base_price: 90.00 }
+        ],
+        selectedCategory: 'all',
+        cart: { items: [], subtotal: 0, tax_amount: 0, total_amount: 0 },
+        order: null,
+        trackingTimer: null,
+        autoDeleteTimer: null,
+        countdownSecs: 5
+    };
+
+    function setStatus(msg, type = 'ok') {
+        const box = document.getElementById('statusMsg');
+        if (!msg) { box.style.display = 'none'; return; }
+        box.textContent = msg;
+        box.className = `status-msg ${type}`;
+    }
+
+    let isCanteenPinVerified = !APP_CONFIG.requireCanteenPin;
+
+    async function validateCanteenPinLive() {
+        const pinInput = document.getElementById('canteenPinInput');
+        const badge = document.getElementById('pinValidationBadge');
+        if (!pinInput || !badge) return;
+
+        if (!APP_CONFIG.requireCanteenPin) {
+            isCanteenPinVerified = true;
+            if (badge) { badge.style.display = 'block'; badge.style.color = '#10b981'; badge.textContent = '⚡ TV PIN Check Bypassed (External Shop Mode)'; }
+            return;
+        }
+        const pinVal = String(pinInput.value || '').trim();
+        if (pinVal.length < 6) {
+            isCanteenPinVerified = false;
+            pinInput.style.borderColor = '#cbd5e1';
+            badge.style.display = 'block';
+            badge.style.color = '#64748b';
+            badge.textContent = '⏳ Type the 6-digit PIN shown on Canteen TV Display...';
+            return;
+        }
+
+        try {
+            const res = await requestJson('/api/v1/canteen/verify-pin', {
+                method: 'POST',
+                body: JSON.stringify({ pin: pinVal })
+            });
+
+            if (res && res.valid) {
+                isCanteenPinVerified = true;
+                pinInput.style.borderColor = '#10b981';
+                pinInput.style.backgroundColor = '#f0fdf4';
+                badge.style.display = 'block';
+                badge.style.color = '#15803d';
+                badge.textContent = '✓ PIN VERIFIED! (Matches Canteen Live TV Display)';
+            } else {
+                isCanteenPinVerified = false;
+                pinInput.style.borderColor = '#ef4444';
+                pinInput.style.backgroundColor = '#fef2f2';
+                badge.style.display = 'block';
+                badge.style.color = '#dc2626';
+                badge.textContent = '❌ INVALID OR EXPIRED PIN! Check Canteen TV Display.';
+            }
+        } catch(e) {
+            isCanteenPinVerified = false;
+            pinInput.style.borderColor = '#ef4444';
+            badge.style.display = 'block';
+            badge.style.color = '#dc2626';
+            badge.textContent = '❌ Unable to verify PIN. Please try again.';
+        }
+    }
+
+    async function requestJson(url, options = {}) {
+        options.headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+        const res = await fetch(url, options);
+        const text = await res.text();
+        let data = {};
+        try { data = JSON.parse(text); } catch(e) { data = { message: text }; }
+        if (!res.ok) throw new Error(data.message || 'API Error');
+        return data;
+    }
+
+    async function bootstrapCart() {
+        try {
+            const tableName = '<%= table ? table.name : "Table 1" %>';
+            const cartRes = await requestJson(`/api/v1/cart/${cartUuid}?table_name=${encodeURIComponent(tableName)}`);
+            if (cartRes.data) {
+                state.cart = cartRes.data;
+            }
+            renderCart();
+            renderItems();
+
+            if (activeOrderUuid) {
+                try {
+                    const ordRes = await requestJson(`/api/v1/orders/${activeOrderUuid}`);
+                    state.order = ordRes.data;
+                    renderOrderTracking(state.order);
+                    startTracking();
+                } catch(e) {}
+            }
+        } catch (err) {
+            renderCart();
+        }
+    }
+
+    async function loadMenuItems() {
+        try {
+            const itemRes = await requestJson('/api/v1/menu/items');
+            if (itemRes.data && itemRes.data.length) {
+                state.items = itemRes.data;
+            }
+            renderItems();
+        } catch (err) {
+            renderItems();
+        }
+    }
+
+    function filterCategory(catId, btn) {
+        state.selectedCategory = catId;
+        document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        renderItems();
+    }
+
+    function getItemQtyInCart(foodItemId) {
+        const item = (state.cart.items || []).find(i => String(i.food_item_id) === String(foodItemId) || String(i.id) === String(foodItemId));
+        return item ? item.quantity : 0;
+    }
+
+    function renderItems() {
+        const container = document.getElementById('itemsContainer');
+        const filtered = state.selectedCategory === 'all' 
+            ? state.items 
+            : state.items.filter(i => String(i.food_category_id) === String(state.selectedCategory));
+
+        if (!filtered.length) {
+            container.innerHTML = '<p style="color:var(--muted); padding:2rem; text-align:center; grid-column: 1/-1;">No dishes available in this category.</p>';
+            return;
+        }
+
+        container.innerHTML = filtered.map(item => {
+            const currentQty = getItemQtyInCart(item.id);
+            const actionHtml = currentQty > 0 
+                ? `<div class="card-qty-controls">
+                     <button class="card-qty-btn" onclick="updateItemQty(${item.id}, ${currentQty - 1})">-</button>
+                     <span class="card-qty-val">${currentQty}</span>
+                     <button class="card-qty-btn" onclick="updateItemQty(${item.id}, ${currentQty + 1})">+</button>
+                   </div>`
+                : `<button class="btn-add" onclick="updateItemQty(${item.id}, 1)">+ Add</button>`;
+
+            return `
+                <div class="item-card">
+                    <div>
+                        <div class="card-top">
+                            <span class="cat-badge">${escapeHtml(item.category_name || 'MAIN')}</span>
+                        </div>
+                        <div class="item-info">
+                            <h3>${escapeHtml(item.name)}</h3>
+                            <p>${escapeHtml(item.description || 'Delicious freshly prepared dish.')}</p>
+                        </div>
+                    </div>
+                    <div class="card-bottom">
+                        <div class="item-price">₹${parseFloat(item.price || item.base_price).toFixed(2)}</div>
+                        ${actionHtml}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function updateItemQty(foodItemId, newQty) {
+        try {
+            const res = await requestJson('/api/v1/cart/items', {
+                method: 'POST',
+                body: JSON.stringify({
+                    cart_uuid: cartUuid,
+                    food_item_id: foodItemId,
+                    quantity: newQty,
+                    table_name: '<%= table ? table.name : "Table 1" %>'
+                })
+            });
+
+            if (res.data) {
+                state.cart = res.data;
+            }
+            await bootstrapCart();
+        } catch (err) {
+            const existingIdx = state.cart.items.findIndex(i => String(i.food_item_id) === String(foodItemId) || String(i.id) === String(foodItemId));
+            const targetDish = state.items.find(i => String(i.id) === String(foodItemId)) || { name: 'Dish', base_price: 100 };
+            const uPrice = parseFloat(targetDish.price || targetDish.base_price);
+
+            if (existingIdx >= 0) {
+                if (newQty <= 0) {
+                    state.cart.items.splice(existingIdx, 1);
+                } else {
+                    state.cart.items[existingIdx].quantity = newQty;
+                    state.cart.items[existingIdx].total_price = uPrice * newQty;
+                }
+            } else if (newQty > 0) {
+                state.cart.items.push({
+                    id: foodItemId,
+                    food_item_id: foodItemId,
+                    item_name: targetDish.name,
+                    unit_price: uPrice,
+                    quantity: newQty,
+                    total_price: uPrice * newQty
+                });
+            }
+
+            let subtotal = 0;
+            state.cart.items.forEach(i => subtotal += (parseFloat(i.unit_price) * parseInt(i.quantity)));
+            state.cart.subtotal = subtotal;
+            state.cart.tax_amount = subtotal * 0.05;
+            state.cart.total_amount = subtotal + state.cart.tax_amount;
+
+            renderCart();
+            renderItems();
+        }
+    }
+
+    function renderCart() {
+        const container = document.getElementById('cartItemsContainer');
+        const summary = document.getElementById('cartSummary');
+        const items = state.cart?.items || [];
+
+        if (!items.length) {
+            container.innerHTML = '<p style="color:var(--muted); font-size:0.9rem;">Your cart is empty.</p>';
+            summary.style.display = 'none';
+            document.getElementById('openPaymentModalBtn').disabled = true;
+            return;
+        }
+
+        const isRemoteDisabled = Boolean(<%= typeof orderSettings !== 'undefined' && orderSettings.allow_remote_preorder === false %>) && Boolean(<%= (typeof is_takeaway !== 'undefined' && is_takeaway) || (table && (table.id == 999 || table.uuid === 'tab_999' || (table.name && (table.name.toLowerCase().includes('takeaway') || table.name.toLowerCase().includes('delivery'))))) %>);
+        const payBtn = document.getElementById('openPaymentModalBtn');
+        if (isRemoteDisabled) {
+            payBtn.disabled = true;
+            payBtn.textContent = '📍 Visit Canteen & Scan Table QR Code to Order';
+        } else {
+            payBtn.disabled = false;
+            payBtn.textContent = 'Proceed to Payment Gateway';
+        }
+        container.innerHTML = items.map(item => `
+            <div class="cart-item">
+                <div>
+                    <div><strong>${escapeHtml(item.item_name)}</strong></div>
+                    <div style="color:var(--muted); font-size:0.8rem;">₹${parseFloat(item.unit_price).toFixed(2)} x ${item.quantity} = ₹${(parseFloat(item.unit_price) * item.quantity).toFixed(2)}</div>
+                </div>
+                <div class="qty-controls">
+                    <button class="qty-btn" onclick="updateItemQty(${item.food_item_id || item.id}, ${item.quantity - 1})">-</button>
+                    <span style="font-weight:800; min-width:18px; text-align:center;">${item.quantity}</span>
+                    <button class="qty-btn" onclick="updateItemQty(${item.food_item_id || item.id}, ${item.quantity + 1})">+</button>
+                </div>
+            </div>
+        `).join('');
+
+        const subtotal = parseFloat(state.cart.subtotal || 0);
+        const tax = parseFloat(state.cart.tax_amount || 0);
+        const total = parseFloat(state.cart.total_amount || 0);
+
+        document.getElementById('subtotalVal').textContent = `₹${subtotal.toFixed(2)}`;
+        document.getElementById('taxVal').textContent = `₹${tax.toFixed(2)}`;
+        document.getElementById('totalVal').textContent = `₹${total.toFixed(2)}`;
+        document.getElementById('modalPayTotal').textContent = `₹${total.toFixed(2)}`;
+        summary.style.display = 'flex';
+    }
+
+    // PAYMENT MODAL CONTROLS
+    function switchPayTab(tabName, btn) {
+        document.querySelectorAll('.pay-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.pay-tab-content').forEach(c => c.style.display = 'none');
+        btn.classList.add('active');
+        if (tabName === 'upi') document.getElementById('tabUpi').style.display = 'block';
+        if (tabName === 'card') document.getElementById('tabCard').style.display = 'block';
+        if (tabName === 'netbank') document.getElementById('tabNetbank').style.display = 'block';
+        if (tabName === 'cash') document.getElementById('tabCash').style.display = 'block';
+    }
+
+    function setDummyUpi(val) { document.getElementById('upiIdInput').value = val; }
+
+    document.getElementById('openPaymentModalBtn').addEventListener('click', () => {
+        if (!state.cart?.items?.length) return;
+        document.getElementById('paymentModal').style.display = 'flex';
+    });
+
+    function closePaymentModal() { document.getElementById('paymentModal').style.display = 'none'; }
+
+    // OPTION 2: SLEEK MODERN DARK GLASSMORPHISM PAYMENT PROCESSOR
+    document.getElementById('startGlassPayBtn').addEventListener('click', async () => {
+        if (!state.cart?.items?.length) return;
+
+        const pinInput = document.getElementById('canteenPinInput');
+        const pinVal = pinInput ? String(pinInput.value || '').trim() : '';
+        
+        if (!APP_CONFIG.requireCanteenPin) {
+            isCanteenPinVerified = true;
+        } else if (!pinVal || pinVal.length < 6 || !isCanteenPinVerified) {
+            alert('📍 Invalid or Expired Canteen Security PIN!\n\nPlease look at the live Canteen TV Display Screen and enter the current 6-digit PIN before proceeding to payment.');
+            if (pinInput) pinInput.focus();
+            return;
+        }
+
+        closePaymentModal();
+
+        const glassOverlay = document.getElementById('glassOverlay');
+        const stepProc = document.getElementById('glassStepProcessing');
+        const stepSucc = document.getElementById('glassStepSuccess');
+        const stepFail = document.getElementById('glassStepFailed');
+        const timerText = document.getElementById('glassTimerText');
+        const ringProgress = document.getElementById('ringProgress');
+
+        const upiVal = String(document.getElementById('upiIdInput').value || '').toLowerCase();
+        const isFailureTest = upiVal.includes('fail') || upiVal.includes('error');
+
+        glassOverlay.style.display = 'flex';
+        stepProc.style.display = 'flex';
+        stepSucc.style.display = 'none';
+        stepFail.style.display = 'none';
+
+        let totalSecs = Math.floor(Math.random() * 2 + 4);
+        let currentSec = totalSecs;
+
+        timerText.textContent = `00:0${currentSec}`;
+        ringProgress.style.strokeDashoffset = 0;
+
+        const interval = setInterval(() => {
+            currentSec--;
+            if (currentSec >= 0) {
+                timerText.textContent = `00:0${currentSec}`;
+                const offset = 283 * (1 - (currentSec / totalSecs));
+                ringProgress.style.strokeDashoffset = offset;
+            }
+
+            if (currentSec <= 0) {
+                clearInterval(interval);
+                stepProc.style.display = 'none';
+
+                if (isFailureTest) {
+                    // FAILURE FLOW
+                    stepFail.style.display = 'flex';
+
+                    setTimeout(() => {
+                        glassOverlay.style.display = 'none';
+                        setStatus('Payment Failed: Insufficient Balance / Network Timeout!', 'warn');
+                    }, 3000);
+                } else {
+                    // SUCCESS FLOW: 3D FOOD VICTORY RECEIPT & CONFETTI STREAM
+                    stepSucc.style.display = 'flex';
+
+                    const totalVal = parseFloat(state.cart.total_amount || 0).toFixed(2);
+                    const txnId = 'TXN_' + Math.floor(Math.random() * 90000000 + 10000000);
+
+                    document.getElementById('glassPaidAmount').textContent = `₹${totalVal}`;
+                    document.getElementById('glassTxnId').textContent = txnId;
+
+                    if (typeof confetti === 'function') {
+                        confetti({
+                            particleCount: 120,
+                            spread: 90,
+                            origin: { y: 0.5 },
+                            colors: ['#c59b27', '#10b981', '#ffffff', '#6366f1']
+                        });
+                    }
+
+                    // Place Order Backend API
+                    (async () => {
+                        try {
+                            const customerName = document.getElementById('customerName').value || 'Guest Customer';
+                            const customerPhone = document.getElementById('customerPhone').value || '9999999999';
+                            const instructions = document.getElementById('orderInstructions').value || '';
+                            const tableName = '<%= table.name %>';
+                            const isTakeaway = <%= table.is_takeaway ? 'true' : 'false' %>;
+
+                            let verifyRes = null;
+                            let lastErr = null;
+                            let attempt = 0;
+                            while (attempt < 3 && !verifyRes) {
+                                attempt++;
+                                try {
+                                    verifyRes = await requestJson('/api/v1/cart/payments/cashfree/verify', {
+                                        method: 'POST',
+                                        body: JSON.stringify({
+                                            cart_uuid: cartUuid,
+                                            customer_name: customerName,
+                                            customer_phone: customerPhone,
+                                            special_instructions: instructions,
+                                            table_name: tableName,
+                                            is_takeaway: isTakeaway,
+                                            canteen_pin: document.getElementById('canteenPinInput') ? document.getElementById('canteenPinInput').value : '',
+                                            cart_items: (state.cart && state.cart.items && state.cart.items.length) ? state.cart.items : []
+                                        })
+                                    });
+                                } catch (attemptErr) {
+                                    lastErr = attemptErr;
+                                    console.warn(`Order post attempt ${attempt} failed:`, attemptErr.message);
+                                    if (attemptErr.message && (attemptErr.message.includes('paused') || attemptErr.message.includes('disabled') || attemptErr.message.includes('pre-order') || attemptErr.message.includes('Forbidden') || attemptErr.message.includes('physical'))) {
+                                        break;
+                                    }
+                                    if (attempt < 3) await new Promise(r => setTimeout(r, 1000));
+                                }
+                            }
+
+                            if (verifyRes && verifyRes.data) {
+                                const newOrd = verifyRes.data;
+                                state.orders.push(newOrd);
+                                sessionStorage.setItem(`canteen_orders_${tableUuid}`, JSON.stringify(state.orders));
+
+                                renderOrderTracking();
+
+                                // RESET CART & CREATE NEW CART SESSION FOR SUBSEQUENT ORDERS FROM SAME TABLE!
+                                state.cart = { items: [], subtotal: 0, tax_amount: 0, total_amount: 0 };
+                                cartUuid = 'cart_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+                                await requestJson('/api/v1/cart/session', {
+                                    method: 'POST',
+                                    body: JSON.stringify({ dining_table_uuid: tableUuid })
+                                }).catch(() => {});
+
+                                renderCart();
+                                renderItems();
+                                startTracking();
+
+                                setTimeout(() => {
+                                    glassOverlay.style.display = 'none';
+                                    setStatus(`Payment Verified! Order Sent to Kitchen!`, 'ok');
+                                }, 3000);
+                            } else {
+                                glassOverlay.style.display = 'none';
+                                const errMsg = (lastErr && lastErr.message) ? lastErr.message : 'Classroom remote ordering & Takeaway links are currently paused by Canteen Admin. Please scan a physical Canteen Table QR code to place your order!';
+                                alert('📍 ' + errMsg);
+                            }
+                        } catch (err) {
+                            glassOverlay.style.display = 'none';
+                            console.error('Final order placement failure:', err);
+                            alert('📍 ' + (err.message || 'Unable to send order to server. Please try again.'));
+                        }
+                    })();
+                }
+            }
+        }, 1000);
+    });
+
+    // MULTI-ORDER STATUS TRACKER LIST FOR TABLE SESSION
+    let savedOrders = [];
+    try {
+        savedOrders = JSON.parse(sessionStorage.getItem(`canteen_orders_${tableUuid}`) || '[]');
+    } catch(e) {}
+    state.orders = Array.isArray(savedOrders) ? savedOrders : [];
+
+    if (state.orders.length > 0) {
+        renderOrderTracking();
+        startTracking();
+    }
+
+    function startTracking() {
+        if (!state.orders || !state.orders.length) return;
+        if (state.trackingTimer) clearInterval(state.trackingTimer);
+
+        state.trackingTimer = setInterval(async () => {
+            let updated = false;
+            for (let ord of state.orders) {
+                try {
+                    const queryKey = ord.order_number || ord.uuid;
+                    const res = await requestJson(`/api/v1/orders/${encodeURIComponent(queryKey)}/tracking`);
+                    if (res && res.data && res.data.status) {
+                        if (ord.status !== res.data.status) {
+                            ord.status = res.data.status;
+                            if (['delivered', 'completed'].includes(String(ord.status).toLowerCase())) {
+                                if (ord.countdownSecs === undefined) ord.countdownSecs = 5;
+                            }
+                            updated = true;
+                        }
+                    }
+                } catch (err) {}
+            }
+            if (updated) {
+                sessionStorage.setItem(`canteen_orders_${tableUuid}`, JSON.stringify(state.orders));
+                renderOrderTracking();
+            }
+        }, 1500);
+
+        // 1-SECOND AUTO-DELETE COUNTDOWN TIMER FOR DELIVERED ORDERS
+        if (state.autoDelInterval) clearInterval(state.autoDelInterval);
+        state.autoDelInterval = setInterval(() => {
+            let needReRender = false;
+            state.orders.forEach(ord => {
+                const normStatus = String(ord.status || '').toLowerCase();
+                if (['delivered', 'completed'].includes(normStatus)) {
+                    if (ord.countdownSecs === undefined) ord.countdownSecs = 5;
+                    if (ord.countdownSecs > 0) {
+                        ord.countdownSecs--;
+                        const cntEl = document.getElementById(`cnt-${ord.uuid}`);
+                        if (cntEl) cntEl.textContent = ord.countdownSecs;
+                    }
+                    if (ord.countdownSecs <= 0) {
+                        needReRender = true;
+                    }
+                }
+            });
+
+            if (needReRender) {
+                state.orders = state.orders.filter(o => o.countdownSecs === undefined || o.countdownSecs > 0);
+                sessionStorage.setItem(`canteen_orders_${tableUuid}`, JSON.stringify(state.orders));
+                renderOrderTracking();
+            }
+        }, 1000);
+    }
+
+    window.clearTableOrders = function() {
+        state.orders = [];
+        try {
+            sessionStorage.removeItem(`canteen_orders_${tableUuid}`);
+        } catch(e) {}
+        renderOrderTracking();
+    };
+
+    function renderOrderTracking() {
+        const box = document.getElementById('trackingBox');
+        if (!state.orders || !state.orders.length) { box.style.display = 'none'; return; }
+        box.style.display = 'flex';
+        box.style.flexDirection = 'column';
+        box.style.gap = '0.75rem';
+
+        box.innerHTML = `
+            <div style="font-weight:800; color:#065f46; font-size:1.05rem; display:flex; justify-content:space-between; align-items:center;">
+                <span>📋 Active Orders Tracker (${state.orders.length})</span>
+                <small style="color:#047857; font-weight:600; cursor:pointer;" onclick="clearTableOrders()">Clear All</small>
+            </div>
+            ${state.orders.map(ord => {
+                const isDelivered = ['delivered', 'completed'].includes(String(ord.status || '').toLowerCase());
+                if (isDelivered && ord.countdownSecs === undefined) ord.countdownSecs = 5;
+                const tokenPayload = `MASTER-CANTEEN|${ord.order_number || ''}|${ord.table_number || ''}|INR-${parseFloat(ord.total_amount || 0).toFixed(2)}`;
+                const tokenQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(tokenPayload)}`;
+
+                return `
+                    <div style="background:#ffffff; border:1.5px solid ${isDelivered ? '#10b981' : '#6ee7b7'}; border-radius:12px; padding:0.85rem; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:0.75rem;">
+                            <div style="flex:1;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                                    <strong style="color:#111827; font-size:0.95rem;">Token: ${escapeHtml(ord.order_number)}</strong>
+                                    <span class="tag ${escapeHtml(ord.status || 'pending')}">${escapeHtml(ord.status || 'pending')}</span>
+                                </div>
+                                <div style="color:#4b5563; font-size:0.85rem;">Total Paid: <strong>₹${parseFloat(ord.total_amount || 0).toFixed(2)}</strong></div>
+                                <div style="color:#059669; font-size:0.82rem; font-weight:700; margin-top:0.25rem;">
+                                    ${isDelivered ? '✅ DELIVERED TO YOUR TABLE!' : (ord.status === 'ready' ? '🔔 READY FOR PICKUP!' : (ord.status === 'preparing' ? '👨‍🍳 KITCHEN IS PREPARING...' : '⏳ ORDER RECEIVED (PENDING)'))}
+                                </div>
+                            </div>
+                            <div style="text-align:center; flex-shrink:0; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:0.35rem;">
+                                <img src="${tokenQrUrl}" alt="Meal Token QR" style="width:56px; height:56px; display:block; border-radius:4px;">
+                                <span style="font-size:0.62rem; font-weight:800; color:#475569; letter-spacing:0.3px;">PICKUP QR</span>
+                            </div>
+                        </div>
+                        ${isDelivered ? `
+                            <div style="display:block; margin-top:0.4rem; font-size:0.8rem; font-weight:800; color:#000000; border-top:1.5px solid #10b981; padding-top:0.35rem;">
+                                (This order status message will auto-delete in <span id="cnt-${ord.uuid}">${ord.countdownSecs !== undefined ? ord.countdownSecs : 5}</span>s for next customer)
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('')}
+        `;
+    }
+
+    function clearTableOrders() {
+        state.orders = [];
+        sessionStorage.removeItem(`canteen_orders_${tableUuid}`);
+        renderOrderTracking();
+    }
+
+    function escapeHtml(str) {
+        return String(str || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+    }
+
+    document.getElementById('refreshCartBtn').addEventListener('click', () => {
+        if (state.autoDeleteTimer) clearInterval(state.autoDeleteTimer);
+        if (state.trackingTimer) clearInterval(state.trackingTimer);
+        sessionStorage.removeItem(`canteen_order_${tableUuid}`);
+        sessionStorage.removeItem(`canteen_cart_${tableUuid}`);
+        cartUuid = 'cart_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now();
+        sessionStorage.setItem(`canteen_cart_${tableUuid}`, cartUuid);
+        activeOrderUuid = null;
+        state.order = null;
+        state.cart = { items: [], subtotal: 0, tax_amount: 0, total_amount: 0 };
+        document.getElementById('trackingBox').style.display = 'none';
+        setStatus('New Order session started!', 'ok');
+        setTimeout(() => setStatus(''), 2000);
+        renderCart();
+        renderItems();
+    });
+
+    bootstrapCart();
+    loadMenuItems();
+</script>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #121827;
+            --panel: #1f2937;
+            --panel-border: #374151;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --brand: #0d9488;
+            --brand-hover: #0f766e;
+            --danger: #dc2626;
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text-main); padding: 1.5rem; }
+
+        .kds-header { display: flex; justify-content: space-between; align-items: center; background: var(--panel); border: 1px solid var(--panel-border); padding: 1rem 1.5rem; border-radius: var(--radius); margin-bottom: 1.5rem; }
+        .kds-header h1 { font-size: 1.5rem; font-weight: 700; color: #5ea4ff; }
+
+        .filters { display: flex; gap: 0.5rem; }
+        .filter-btn { background: #374151; color: var(--text-main); border: none; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .filter-btn.active { background: var(--brand); color: white; }
+
+        .tickets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
+
+        .ticket-card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--radius); padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; position: relative; }
+        .ticket-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--panel-border); padding-bottom: 0.75rem; }
+        .ticket-number { font-size: 1.1rem; font-weight: 700; color: #fbbf24; }
+        .table-number { background: #374151; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; }
+
+        .ticket-status { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+        .ticket-status.pending { background: #7c2d12; color: #ffedd5; }
+        .ticket-status.preparing, .ticket-status.accepted { background: #1e3a8a; color: #dbeafe; }
+        .ticket-status.ready, .ticket-status.completed, .ticket-status.delivered { background: #14532d; color: #dcfce7; }
+        .ticket-status.cancelled { background: #7f1d1d; color: #fee2e2; }
+
+        .item-list { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.95rem; }
+        .item-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #374151; padding-bottom: 0.4rem; }
+        .item-qty { background: var(--brand); color: white; padding: 0.1rem 0.5rem; border-radius: 4px; font-weight: 700; font-size: 0.85rem; margin-right: 0.5rem; }
+
+        .action-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; border-top: 1px solid var(--panel-border); padding-top: 0.75rem; }
+        .btn-status { background: #374151; color: var(--text-main); border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; flex: 1; text-align: center; }
+        .btn-status:hover { background: var(--brand); }
+        .btn-cancel { background: var(--danger); }
+
+        .audio-toggle { background: #374151; color: var(--text-main); border: 1px solid var(--panel-border); padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="kds-header">
+        <div>
+            <h1>Kitchen Display Screen (KDS)</h1>
+            <p style="color:var(--text-muted); font-size:0.85rem; margin-top:0.2rem;" id="syncState">Live Polling Active (2s)</p>
+        </div>
+        <div style="display:flex; gap:1rem; align-items:center;">
+            <button id="audioToggleBtn" class="audio-toggle">🔊 Audio Enabled</button>
+            <a href="/kitchen/logout" class="audio-toggle" style="background:#7f1d1d; color:#fee2e2; border:1px solid #ef4444; text-decoration:none; font-weight:700; display:inline-flex; align-items:center; gap:0.3rem;">🚪 Lock Screen</a>
+            <div class="filters">
+                <button class="filter-btn active" onclick="setFilter('all')">All</button>
+                <button class="filter-btn" onclick="setFilter('dine_in')">🍽️ Dine-In Tables</button>
+                <button class="filter-btn" onclick="setFilter('takeaway')">🛵 Takeaway / Home</button>
+                <button class="filter-btn" onclick="setFilter('pending')">Pending</button>
+                <button class="filter-btn" onclick="setFilter('in_progress')">In Progress</button>
+                <button class="filter-btn" onclick="setFilter('completed')">Completed</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="tickets-grid" id="ticketsContainer">
+        <p style="color:var(--text-muted);">Loading kitchen tickets...</p>
+    </div>
+
+<script>
+    let tickets = [];
+    let activeFilter = 'all';
+    let previousSize = 0;
+    let audioEnabled = true;
+
+    function playChimeSound() {
+        if (!audioEnabled) return;
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Loud dual-bell pulse chime
+            [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, ctx.currentTime + (i * 0.1));
+                gain.gain.setValueAtTime(0.8, ctx.currentTime + (i * 0.1));
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (i * 0.1) + 0.5);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime + (i * 0.1));
+                osc.stop(ctx.currentTime + (i * 0.1) + 0.5);
+            });
+        } catch (e) { console.error(e); }
+    }
+
+    document.getElementById('audioToggleBtn').addEventListener('click', () => {
+        audioEnabled = !audioEnabled;
+        document.getElementById('audioToggleBtn').textContent = audioEnabled ? '🔊 Audio Enabled' : '🔇 Audio Muted';
+    });
+
+    let autoHideMins = 0; // 0 = show all tickets forever
+
+    async function fetchTickets() {
+        try {
+            const res = await fetch('/kitchen/api/tickets');
+            const data = await res.json();
+            // Use nullish coalescing so 0 is respected (0 = never hide)
+            autoHideMins = (data.auto_hide_minutes !== undefined && data.auto_hide_minutes !== null) ? data.auto_hide_minutes : 0;
+            const newTickets = data.data || [];
+
+            if (newTickets.length > previousSize && previousSize > 0) {
+                playChimeSound();
+            }
+            previousSize = newTickets.length;
+            tickets = newTickets;
+            renderTickets();
+        } catch (err) {
+            document.getElementById('syncState').textContent = 'Sync error retrying...';
+        }
+    }
+
+    function setFilter(filter) {
+        activeFilter = filter;
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            const btnKey = btn.getAttribute('onclick').replace("setFilter('", "").replace("')", "");
+            btn.classList.toggle('active', btnKey === filter);
+        });
+        renderTickets();
+    }
+
+    function renderTickets() {
+        const container = document.getElementById('ticketsContainer');
+        const now = Date.now();
+
+        // AUTO-HIDE FILTER: Hide completed/delivered tickets older than autoHideMins
+        let filtered = tickets.filter(t => {
+            const isFulfilled = ['delivered', 'completed', 'cancelled'].includes(String(t.status || '').toLowerCase());
+            if (!isFulfilled || autoHideMins === 0) return true;
+            const createdTime = new Date(t.created_at || Date.now()).getTime();
+            const diffMins = (now - createdTime) / 60000;
+            return diffMins <= autoHideMins;
+        });
+
+        if (activeFilter === 'dine_in') {
+            filtered = filtered.filter(t => t.order_type !== 'takeaway' && !String(t.table_number || '').toLowerCase().includes('takeaway'));
+        } else if (activeFilter === 'takeaway') {
+            filtered = filtered.filter(t => t.order_type === 'takeaway' || String(t.table_number || '').toLowerCase().includes('takeaway'));
+        } else if (activeFilter === 'pending') {
+            filtered = filtered.filter(t => t.status === 'pending');
+        } else if (activeFilter === 'in_progress') {
+            filtered = filtered.filter(t => ['accepted', 'preparing', 'ready'].includes(t.status));
+        } else if (activeFilter === 'completed') {
+            filtered = filtered.filter(t => ['completed', 'delivered', 'cancelled'].includes(t.status));
+        }
+
+        if (!filtered.length) {
+            container.innerHTML = '<p style="color:var(--text-muted); font-size:1.1rem; grid-column:1/-1;">No tickets in this status.</p>';
+            return;
+        }
+
+        container.innerHTML = filtered.map(t => {
+            const isTakeaway = t.order_type === 'takeaway' || String(t.table_number || '').toLowerCase().includes('takeaway');
+            const tableBadgeHtml = isTakeaway
+                ? `<span class="table-number" style="background:#5b21b6; color:#f3e8ff; border:1px solid #7e22ce; font-weight:800;">🛵 TAKEAWAY / HOME</span>`
+                : `<span class="table-number" style="background:#78350f; color:#fef3c7; border:1px solid #b45309; font-weight:800;">🍽️ ${escapeHtml(t.table_number || 'Table 1')}</span>`;
+
+            const itemsHtml = (t.items || []).map(i => `
+                <div class="item-row">
+                    <div>
+                        <span class="item-qty">${i.quantity}x</span>
+                        <strong>${escapeHtml(i.item_name)}</strong>
+                        ${i.variant_name ? `<small>(${escapeHtml(i.variant_name)})</small>` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            let actionBtnsHtml = '';
+            if (t.status === 'pending') {
+                actionBtnsHtml = `<button class="btn-status" onclick="updateTicketStatus('${t.uuid}', 'preparing')">Mark Preparing</button>`;
+            } else if (t.status === 'preparing' || t.status === 'accepted') {
+                actionBtnsHtml = `<button class="btn-status" onclick="updateTicketStatus('${t.uuid}', 'ready')">Mark Ready</button>`;
+            } else if (t.status === 'ready') {
+                actionBtnsHtml = `<button class="btn-status" onclick="updateTicketStatus('${t.uuid}', 'delivered')">Mark Delivered</button>`;
+            }
+            if (!['completed', 'delivered', 'cancelled'].includes(t.status)) {
+                actionBtnsHtml += `<button class="btn-status btn-cancel" onclick="updateTicketStatus('${t.uuid}', 'cancelled')">Cancel</button>`;
+            }
+
+            return `
+                <div class="ticket-card">
+                    <div class="ticket-header">
+                        <div>
+                            <div class="ticket-number">${escapeHtml(t.order_number || t.ticket_number)}</div>
+                            <small style="color:var(--text-muted); font-size:0.75rem;">(${escapeHtml(t.ticket_number)}) ${formatDate(t.created_at)}</small>
+                            <div style="margin-top:0.35rem; font-size:0.78rem; font-weight:700; color:#38bdf8; display:flex; align-items:center; gap:0.3rem;">
+                                <span style="background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.25); padding:0.2rem 0.55rem; border-radius:6px;">
+                                    👤 ${escapeHtml(t.customer_name || 'Guest Student')} ${t.customer_phone ? `(${escapeHtml(t.customer_phone)})` : ''}
+                                </span>
+                            </div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.4rem;">
+                            ${tableBadgeHtml}
+                            <span class="ticket-status ${t.status}">${escapeHtml(t.status)}</span>
+                        </div>
+                    </div>
+
+                    <div class="item-list">
+                        ${itemsHtml}
+                    </div>
+
+                    <div class="action-btns">
+                        ${actionBtnsHtml}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function updateTicketStatus(uuid, status) {
+        try {
+            await fetch(`/kitchen/api/tickets/${uuid}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+            fetchTickets();
+        } catch (err) {
+            alert('Failed to update ticket: ' + err.message);
+        }
+    }
+
+    function formatDate(dStr) {
+        if (!dStr) return '';
+        const d = new Date(dStr);
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function escapeHtml(str) {
+        return (str || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+    }
+
+    // Ultra-Fast 1-sec Real-Time Polling for Instant Non-Refresh Ticket Sync
+    setInterval(fetchTickets, 1000);
+    fetchTickets();
+</script>
+</body>
+</html>

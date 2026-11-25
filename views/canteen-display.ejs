@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Canteen - Live Security PIN Display</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #090d16;
+            --card-bg: #0f172a;
+            --border: #1e293b;
+            --brand: #f59e0b;
+            --brand-glow: rgba(245, 158, 11, 0.4);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-green: #10b981;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        body {
+            background: var(--bg);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(circle at 50% 30%, rgba(245, 158, 11, 0.12) 0%, transparent 60%),
+                radial-gradient(circle at 10% 80%, rgba(16, 185, 129, 0.08) 0%, transparent 40%);
+        }
+
+        .header {
+            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 900;
+            letter-spacing: 1px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .badge-live {
+            background: #ef4444;
+            color: #fff;
+            padding: 0.35rem 0.85rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.97); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .pin-card {
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 28px;
+            padding: 3rem 4rem;
+            text-align: center;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 40px var(--brand-glow);
+            max-width: 750px;
+            width: 100%;
+            position: relative;
+        }
+
+        .pin-card-title {
+            color: var(--text-muted);
+            font-size: 1.25rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1.5rem;
+        }
+
+        .pin-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 5.5rem;
+            font-weight: 800;
+            color: var(--brand);
+            letter-spacing: 16px;
+            text-shadow: 0 0 30px var(--brand-glow);
+            margin-bottom: 1.5rem;
+            user-select: none;
+        }
+
+        .timer-container {
+            width: 100%;
+            background: #1e293b;
+            height: 14px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        .timer-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #f59e0b 0%, #10b981 100%);
+            width: 100%;
+            transition: width 1s linear;
+            border-radius: 10px;
+        }
+
+        .timer-text {
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .footer-note {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            font-weight: 600;
+            max-width: 700px;
+            line-height: 1.5;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border);
+            padding: 1rem 2rem;
+            border-radius: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🍽️ MASTER CANTEEN <span class="badge-live">● LIVE TV DISPLAY</span></h1>
+    </div>
+
+    <div class="pin-card">
+        <div class="pin-card-title">🔒 LIVE CANTEEN ORDER VERIFICATION PIN</div>
+        <div class="pin-display" id="pinDisplay">------</div>
+        
+        <div class="timer-container">
+            <div class="timer-bar" id="timerBar"></div>
+        </div>
+        <div class="timer-text" id="timerText">Refreshing in 15s...</div>
+    </div>
+
+    <div class="footer-note">
+        📱 <strong>STUDENT INSTRUCTION:</strong> Look at this screen and enter the current 6-digit PIN on your phone to verify physical canteen presence and confirm your food order!
+    </div>
+
+    <script>
+        async function updateLivePin() {
+            try {
+                const res = await fetch('/api/v1/canteen/live-pin');
+                const data = await res.json();
+                if (data && data.pin) {
+                    document.getElementById('pinDisplay').textContent = data.pin.replace(/(\d{3})(\d{3})/, '$1 $2');
+                    const secs = data.secondsRemaining || 15;
+                    const percent = (secs / 15) * 100;
+                    document.getElementById('timerBar').style.width = `${percent}%`;
+                    document.getElementById('timerText').textContent = `PIN Refreshes in ${secs}s...`;
+                }
+            } catch(e) {}
+        }
+
+        updateLivePin();
+        setInterval(updateLivePin, 1000);
+    </script>
+</body>
+</html>
